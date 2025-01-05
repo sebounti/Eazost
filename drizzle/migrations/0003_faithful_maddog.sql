@@ -1,0 +1,1 @@
+ALTER TABLE `users_resetpassword` MODIFY COLUMN `users_id` varchar(255) NOT NULL;

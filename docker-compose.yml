@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: . # Indique à Docker d'utiliser le Dockerfile à cet emplacement
+    container_name: my_app
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=qwerty
+      - DATABASE_NAME=eazost
+      - DATABASE_URL=mysql://root:qwerty@mysql:3306/eazost
+      - NODE_ENV=development
+      - sJw4f9=nul
+    ports:
+      - "3001:3000" # Expose le port pour Next.js
+    depends_on:
+      - mysql
+    networks:
+      - my_network
+    volumes:
+      - ./src:/app/src # Ajout du volume
+
+
+    command: "./entrypoint.sh"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_dev
+    environment:
+      MYSQL_ROOT_PASSWORD: qwerty
+      MYSQL_DATABASE: eazost
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - my_network
+
+volumes:
+  mysql_data:
+
+networks:
+  my_network:
