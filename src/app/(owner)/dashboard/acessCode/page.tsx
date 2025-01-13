@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import AccessCodeDialog from "@/components/card/dialogs/AccessCodeDialog";
 
 interface AccessCode {
   id: string;
@@ -36,17 +39,20 @@ interface AccessCode {
   logement: string;
   dateCreation: Date;
   dateExpiration: Date;
-  status: "actif" | "expiré" | "inactif";
+  status: string;
 }
 
 export default function AccessCodePage() {
-  const [code, setCode] = useState("");
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/login');
+    },
+  });
   const [filterLogement, setFilterLogement] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterDateStart, setFilterDateStart] = useState<Date>();
   const [filterDateEnd, setFilterDateEnd] = useState<Date>();
-
-  // Exemple de données (à remplacer par vos données réelles)
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([
     {
       id: "1",
@@ -58,14 +64,12 @@ export default function AccessCodePage() {
     },
   ]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      // Logique pour sauvegarder le code d'accès
-      toast.success("Code d'accès mis à jour avec succès");
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour du code d'accès");
-    }
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
+  const handleGenerateCode = (data: any) => {
+    console.log("Code généré :", data);
   };
 
   const filteredCodes = accessCodes.filter((accessCode) => {
@@ -79,7 +83,7 @@ export default function AccessCodePage() {
 
   return (
 	<><div className="flex items-center gap-4 p-4">
-	<SidebarTrigger className="text-xl" />
+	<SidebarTrigger className="text-md" />
 	<Separator orientation="vertical" className="mr-2 h-4" />
 	<Breadcrumb>
 	  <BreadcrumbList>
@@ -88,7 +92,7 @@ export default function AccessCodePage() {
 		</BreadcrumbItem>
 		<BreadcrumbSeparator />
 		<BreadcrumbItem>
-		  <BreadcrumbLink className="text-xl">Boutique</BreadcrumbLink>
+		  <BreadcrumbLink className="text-xl text-amber-500">Code d'accès</BreadcrumbLink>
 		</BreadcrumbItem>
 	  </BreadcrumbList>
 	</Breadcrumb>
@@ -99,29 +103,18 @@ export default function AccessCodePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Gestion des codes d'accès</h1>
         <p className="mt-2 text-gray-600">
-          Créez et gérez les codes d'accès temporaires pour vos logements
+          Créez et gérez les codes d'accès pour vos logements
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-md space-y-4 mb-8">
-        <div>
-          <label htmlFor="accessCode" className="block text-sm font-medium mb-2">
-            Nouveau code d'accès
-          </label>
-          <Input
-            id="accessCode"
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Entrez le nouveau code d'accès"
-            className="w-full"
-          />
-        </div>
-
-        <Button type="submit">
-          Mettre à jour le code
-        </Button>
-      </form>
+	<div className="flex justify-start mb-4">
+      {/* Bouton qui ouvre la modale */}
+      <AccessCodeDialog onSubmit={handleGenerateCode}>
+        <button className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600">
+          + Créer un code d'accès
+        </button>
+      </AccessCodeDialog>
+	</div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Select onValueChange={setFilterLogement}>
@@ -150,7 +143,7 @@ export default function AccessCodePage() {
           selected={filterDateStart}
           onSelect={setFilterDateStart}
           startYear={2024}
-          endYear={2030}
+          endYear={2050}
         />
 
         <ShadcnDatePicker
