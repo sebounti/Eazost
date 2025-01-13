@@ -3,52 +3,74 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
   function middleware(req) {
-    console.log('🔒 Middleware exécuté pour la route:', req.nextUrl.pathname);
-    console.log('Token:', req.nextauth.token);
+    console.log('\n🔒 --- Début Middleware ---');
+    console.log(`📍 Route demandée: ${req.nextUrl.pathname}`);
+    console.log('🔑 Token complet:', req.nextauth.token);
 
     const token = req.nextauth.token;
     const isAuth = !!token;
     const isAuthPage = req.nextUrl.pathname.startsWith('/login');
 
-    // Gestion des pages d'authentification
+    console.log('🔑 État détaillé:', {
+      isAuth,
+      isAuthPage,
+      accountType: token?.account_type,
+      userId: token?.id,
+      email: token?.email
+    });
+
+    // Si c'est la page de login
     if (isAuthPage) {
-      if (isAuth) {
-        console.log('🔄 Utilisateur déjà connecté, redirection vers dashboard');
-        return NextResponse.redirect(new URL('/dashboard', req.url));
+      if (!isAuth) {
+        // Permettre l'accès à la page de login si non authentifié
+        return NextResponse.next();
       }
-      return NextResponse.next();
+
+
+      const dashboardPath = token.account_type === 'owner'
+        ? '/dashboard'
+        : '/dashboard';
+
+      return NextResponse.redirect(new URL(dashboardPath, req.url));
     }
 
     // Vérification de l'authentification
     if (!isAuth) {
-      console.log('🚫 Utilisateur non authentifié');
       let callbackUrl = req.nextUrl.pathname;
       return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, req.url));
     }
 
-    // Si account_type est undefined, rediriger vers la page de login
-    if (!token?.account_type) {
-      console.log('❌ Type de compte non défini');
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    // Vérification des permissions basées sur account_type
-    if (req.nextUrl.pathname.startsWith('/dashboard')) {
-      console.log('Vérification des permissions pour le dashboard');
-      if (token.account_type !== 'owner' && token.account_type !== 'user') {
-        console.log('🚫 Accès refusé : type de compte invalide');
-        return NextResponse.redirect(new URL("/unauthorized", req.url));
+    // Vérification des accès selon account_type
+    if (req.nextUrl.pathname.startsWith('/owner')) {
+      if (token.account_type !== 'owner') {
+        return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
     }
 
-    console.log('✅ Accès autorisé pour:', req.nextUrl.pathname);
+    // Vérification des accès selon account_type
+    if (req.nextUrl.pathname.startsWith('/user')) {
+      console.log('🔍 Vérification accès /user:', {
+        actual: token.account_type,
+        required: 'user'
+      });
+
+      if (token.account_type !== 'user') {
+        console.log('❌ Accès refusé: mauvais type de compte');
+        return NextResponse.redirect(new URL('/unauthorized', req.url));
+      }
+    }
+
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => {
-        console.log('🔑 Autorisation réussie pour:', token);
-        return true;
+      authorized: ({ req, token }) => {
+        // Permettre l'accès à /login sans token
+        if (req.nextUrl.pathname.startsWith('/login')) {
+          return true;
+        }
+        // Pour les autres routes, vérifier le token
+        return !!token;
       },
     },
   }
@@ -57,6 +79,8 @@ export default withAuth(
 export const config = {
   matcher: [
     '/login',
+    '/owner/:path*',
+    '/user/:path*',
     '/dashboard/:path*'
   ]
 };
