@@ -15,9 +15,19 @@ type UserSession = {
     image?: string;
 }
 
+type user = {
+    id: string;
+    email: string;
+    name: string;
+    account_type?: string;
+}
+
 declare module "next-auth" {
     interface Session extends DefaultSession {
         user: UserSession & DefaultSession["user"]
+    }
+    interface User {
+        account_type?: string;
     }
 }
 
@@ -101,28 +111,25 @@ export const authOptions: NextAuthOptions = {
             console.log("🔑 SignIn callback:", { user, account });
             return true;
         },
-        async jwt({ token, user, account }) {
-            console.log("🎫 JWT Callback - Avant:", { token, user, account });
+        async jwt({ token, user }) {
+            console.log('🎫 JWT Input:', { token, user });
             if (user) {
                 token.id = user.id;
-                token.email = user.email;
-                token.name = user.name;
+                token.email = user.email || '';
+                token.name = user.name || '';
                 token.account_type = user.account_type;
-                token.image = user.image;
             }
-            console.log("🎫 JWT Callback - Après:", token);
+            console.log('🎫 JWT Output:', token);
             return token;
         },
         async session({ session, token }) {
-            console.log("📍 Session Callback - Avant:", { session, token });
             if (token && session.user) {
                 session.user.id = token.id;
-                session.user.email = token.email;
-                session.user.name = token.name;
+                session.user.email = token.email || '';
+                session.user.name = token.name || '';
                 session.user.account_type = token.account_type;
                 session.user.image = token.image;
             }
-            console.log("📍 Session Callback - Après:", session);
             return session;
         }
     },

@@ -1,97 +1,130 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
-import { stayInfo, accommodation } from '@/db/appSchema';
-import { stayInfoSchema } from '@/lib/validations/StayInfoSchema';
-import { sql } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+import { stayInfo } from '@/db/appSchema';
+import { eq } from 'drizzle-orm';
 
-// GET pour récupérer toutes les info cards
+// GET - Récupérer les infos
 export async function GET(request: Request) {
-	try {
-		const { searchParams } = new URL(request.url);
-		const userId = searchParams.get('userId');
+	const { searchParams } = new URL(request.url);
+	const userId = searchParams.get('userId');
 
-		if (!userId) {
-			return NextResponse.json({ message: 'User ID requis' }, { status: 400 });
+	console.log('GET /api/stayInfo - userId:', userId);
+
+	if (!userId) {
+		return NextResponse.json(
+			{ message: 'UserId manquant' },
+			{ status: 400 }
+		);
+	}
+
+	try {
+		// D'abord, récupérer les logements de l'utilisateur
+		console.log('Recherche des logements pour userId:', userId);
+		const accommodations = await db.query.accommodation.findMany({
+			where: (accommodation, { eq }) => eq(accommodation.users_id, userId)
+		});
+
+		console.log('Logements trouvés:', accommodations);
+
+		if (!accommodations.length) {
+			return NextResponse.json({
+				message: 'Aucun logement trouvé',
+				data: []
+			});
 		}
 
-		// Récupérer d'abord les logements de l'utilisateur
-		const accommodations = await db.select().from(accommodation)
-			.where(sql`${accommodation.users_id} = ${userId}`);
-		const accommodationIds = accommodations.map(acc => acc.accommodation_id);
+		// Ensuite, récupérer les stayInfo pour ces logements
+		console.log('Recherche des stayInfo pour les logements:', accommodations.map(a => a.accommodation_id));
+		const stayInfos = await db.query.stayInfo.findMany({
+			where: (stayInfo, { inArray }) =>
+				inArray(stayInfo.accommodation_id, accommodations.map(acc => acc.accommodation_id))
+		});
 
-		// Puis récupérer les stayInfo pour ces logements
-		const stayInfoData = await db.select().from(stayInfo)
-			.where(sql`${stayInfo.accommodation_id} IN ${accommodationIds}`);
+		console.log('StayInfos trouvés:', stayInfos);
 
-		return NextResponse.json(stayInfoData);
-
-	} catch (error) {
-		console.error('Erreur lors de la récupération des cartes:', error);
+		return NextResponse.json({
+			message: 'Données récupérées avec succès',
+			data: stayInfos
+		});
+	} catch (error: any) {
+		console.error('Erreur détaillée:', error);
 		return NextResponse.json(
-			{ message: 'Erreur serveur' },
+			{ message: 'Erreur serveur', error: error.message },
 			{ status: 500 }
 		);
 	}
 }
 
-// POST pour créer une nouvelle info card
-export async function POST(request: Request) {
+
+// POST - Créer une nouvelle info
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export async function POST(req: Request) {
+	console.log('=== POST /api/stayInfo ===');
+
 	try {
-		const data = await request.json();
-		console.log('📝 Données reçues:', data);
+		// Log de la requête complète
+		console.log('Headers:', Object.fromEntries(req.headers.entries()));
+		const body = await req.json();
+		console.log('Body:', body);
 
-		// Vérifier les données avec le schéma
-		const parsedData = stayInfoSchema.parse(data);
-		console.log('✅ Données validées:', parsedData);
+		// Validation des données
+		if (!body.accommodation_id || !body.title || !body.description || !body.category) {
+			console.log('Validation failed:', body);
+			return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+		}
 
-		// Créer la nouvelle info card
-		const newInfoCard = await db.insert(stayInfo).values({
-			accommodation_id: parsedData.accommodation_id,
-			title: parsedData.title,
-			description: parsedData.description,
-			photo_url: parsedData.photo_url || null,
-			category: parsedData.category,
+		// Tentative d'insertion
+		const result = await db.insert(stayInfo).values({
+			accommodation_id: body.accommodation_id,
+			title: body.title,
+			category: body.category,
+			description: body.description,
+			photo_url: body.photo_url || null,
 			created_at: new Date(),
 			updated_at: new Date()
-		}).returning();
+		});
 
-		console.log('✨ Nouvelle carte créée:', newInfoCard);
+		console.log('Insert result:', result);
 
-		return NextResponse.json(newInfoCard[0], { status: 201 });
+		return NextResponse.json({ success: true, data: result });
+
 	} catch (error) {
-		console.error('❌ Erreur lors de la création de la carte:', error);
-		if (error instanceof Error) {
-			return NextResponse.json(
-				{ message: error.message },
-				{ status: 400 }
-			);
-		}
+		console.error('POST Error:', error);
 		return NextResponse.json(
-			{ message: 'Erreur serveur' },
+			{ error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) },
 			{ status: 500 }
 		);
 	}
 }
 
-// DELETE pour supprimer une info card
-export async function DELETE(request: Request) {
+// PUT - Mettre à jour une info
+export async function PUT(request: Request) {
 	try {
-		const { searchParams } = new URL(request.url);
-		const cardId = searchParams.get('cardId');
-
-		if (!cardId) {
-			return NextResponse.json({ message: 'Card ID requis' }, { status: 400 });
-		}
-
-		await db.delete(stayInfo)
-			.where(sql`${stayInfo.stayInfo_id} = ${cardId}`);
-
-		return NextResponse.json({ message: 'Carte supprimée avec succès' });
+		const { id, ...data } = await request.json();
+		const result = await db.update(stayInfo)
+			.set(data)
+			.where(eq(stayInfo.stay_info_id, id));
+		return NextResponse.json(result);
 	} catch (error) {
-		console.error('Erreur lors de la suppression:', error);
-		return NextResponse.json(
-			{ message: 'Erreur serveur' },
-			{ status: 500 }
-		);
+		return NextResponse.json({ message: 'Erreur mise à jour' }, { status: 500 });
+	}
+}
+
+// DELETE - Supprimer une info
+export async function DELETE(request: Request) {
+	const { searchParams } = new URL(request.url);
+	const id = searchParams.get('id');
+
+	if (!id) {
+		return NextResponse.json({ message: 'ID manquant' }, { status: 400 });
+	}
+
+	try {
+		await db.delete(stayInfo).where(eq(stayInfo.stay_info_id, parseInt(id)));
+		return NextResponse.json({ message: 'Supprimé avec succès' });
+	} catch (error) {
+		return NextResponse.json({ message: 'Erreur suppression' }, { status: 500 });
 	}
 }

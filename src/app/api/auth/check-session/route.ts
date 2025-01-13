@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { baseVerifyToken } from '@/app/api/services/allTokenService';
 import { TOKEN_CONFIG } from '@/app/api/services/allTokenService';
-import db from '@/db/db';
+import { db } from '@/db/db';
 import { eq } from 'drizzle-orm';
 import { usersInfo } from '@/db/appSchema';
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 		const userProfile = await db
 		.select()
 		.from(usersInfo)
-		.where(eq(usersInfo.users_id, userId))
+		.where(eq(usersInfo.users_id, String(userId)))
 		.limit(1);
 
 

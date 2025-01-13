@@ -1,9 +1,10 @@
 // app/api/logements/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
-import { accommodation } from "@/db/appSchema";
-import { accommodationSchema } from "@/lib/validations/accommodation";
+import { accommodation, stayInfo, shop } from "@/db/appSchema";
+import { accommodationSchema } from "@/validation/PropertySchema";
 import { eq } from "drizzle-orm";
+import { ZodError } from "zod";
 
 // GET pour récupérer tous les logements ou les logements d'un utilisateur
 export async function GET(request: Request) {
@@ -24,15 +25,60 @@ export async function GET(request: Request) {
     console.log('📦 API - Instance db:', !!db);
     console.log('📦 API - Instance accommodation:', !!accommodation);
 
-    const query = db.select().from(accommodation).where(eq(accommodation.users_id, userId));
-    console.log('🔍 API - Requête SQL:', query.toSQL());
+    const logements = await db.select({
+      accommodation_id: accommodation.accommodation_id,
+      name: accommodation.name,
+      type: accommodation.type,
+      photo_url: accommodation.photo_url,
+      description: accommodation.description,
+      address_line1: accommodation.address_line1,
+      address_line2: accommodation.address_line2,
+      city: accommodation.city,
+      zipcode: accommodation.zipcode,
+      country: accommodation.country,
+      stayInfo: stayInfo
+    })
+    .from(accommodation)
+    .leftJoin(stayInfo, eq(accommodation.accommodation_id, stayInfo.accommodation_id))
+    .where(eq(accommodation.users_id, userId));
 
-    const logements = await query;
-    console.log('📦 API - Logements trouvés:', logements.length, 'logements:', logements);
+    // Restructurer les données pour regrouper les stayInfo par logement
+    type AccommodationWithStayInfo = {
+      accommodation_id: number;
+      name: string;
+      type: string;
+      photo_url: string | null;
+      description: string | null;
+      address_line1: string;
+      address_line2: string | null;
+      city: string;
+      zipcode: string;
+      country: string;
+      stayInfo: typeof stayInfo.$inferSelect[];
+    };
+
+    const restructuredData = logements.reduce<AccommodationWithStayInfo[]>((acc, current) => {
+      const existingAccommodation = acc.find(a => a.accommodation_id === current.accommodation_id);
+
+      if (existingAccommodation) {
+        if (current.stayInfo) {
+          existingAccommodation.stayInfo.push(current.stayInfo);
+        }
+      } else {
+        acc.push({
+          ...current,
+          stayInfo: current.stayInfo ? [current.stayInfo] : []
+        });
+      }
+
+      return acc;
+    }, []);
+
+    console.log('📦 API - Logements trouvés:', restructuredData.length);
 
     return NextResponse.json({
-      message: logements.length ? 'Logements trouvés' : 'Aucun logement trouvé',
-      data: logements
+      message: restructuredData.length ? 'Logements trouvés' : 'Aucun logement trouvé',
+      data: restructuredData
     });
   } catch (error) {
     console.error('❌ API - Erreur:', error);
@@ -47,32 +93,57 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    console.log('📦 Données reçues:', JSON.stringify(data, null, 2));
 
-    // Vérifier que photo_url est présent
-    if (!data.photo_url) {
+    // Validation avec Zod
+    const validated = accommodationSchema.parse(data);
+    console.log('✅ Données validées:', JSON.stringify(validated, null, 2));
+
+    const uuid = crypto.randomUUID();
+
+    // Créer le logement dans la base de données
+    const result = await db.insert(accommodation).values({
+      ...validated,
+      uuid,
+      created_at: new Date(),
+      updated_at: new Date()
+    }).execute();
+
+    // récupérer le logement créé avec l'ID auto-incrémenté
+    const [newAccommodation] = await db.select().from(accommodation)
+      .where(eq(accommodation.uuid, uuid))
+      .limit(1);
+
+    // ajouter un shop
+    await db.insert(shop).values({
+      accommodation_id: newAccommodation.accommodation_id,
+      name: validated.name,
+      uuid: crypto.randomUUID(),
+      created_at: new Date(),
+      updated_at: new Date()
+    });
+
+    return NextResponse.json(
+      { message: 'Logement créé avec succès', data: result },
+      { status: 201 }
+    );
+
+  } catch (error) {
+    console.error("❌ Erreur détaillée:", {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      errors: (error as ZodError).errors
+    });
+
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, message: "L'URL de la photo est requise" },
+        { error: "Données invalides", details: error.errors },
         { status: 400 }
       );
     }
-
-    // Vérifier les données avec le schéma
-    const validated = accommodationSchema.parse(data);
-
-    // Créer les données pour la base de données
-    const accommodationData = {
-      ...validated,
-      users_id: validated.user_id,
-      uuid: crypto.randomUUID(),
-      created_at: new Date(),
-      updated_at: new Date(),
-      photo_url: data.photo_url,
-    };
-
-    const result = await db.insert(accommodation).values(accommodationData);
-    return NextResponse.json(accommodationData);
-  } catch (error) {
-    console.error("Erreur:", error);
-    return NextResponse.json({ error: "Erreur lors de la création du logement" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erreur lors de la création du logement" },
+      { status: 500 }
+    );
   }
 }

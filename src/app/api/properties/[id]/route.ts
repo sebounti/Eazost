@@ -1,6 +1,6 @@
 // app/api/logements/[id]/route.ts
 import { NextResponse } from "next/server";
-import db from "@/db/db";
+import { db } from "@/db/db";
 import { accommodation, stayInfo, shop, accessCode } from "@/db/appSchema";
 import { eq } from "drizzle-orm";
 
@@ -22,42 +22,27 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id);
     const formData = await request.formData();
+    const updatedProperty = await db
+      .update(accommodation)
+      .set({
+        name: formData.get('name') as string,
+        type: formData.get('type') as string,
+        address_line1: formData.get('address_line1') as string,
+        address_line2: formData.get('address_line2') as string || null,
+        city: formData.get('city') as string,
+        zipcode: formData.get('zipcode') as string,
+        country: formData.get('country') as string,
+        description: formData.get('description') as string,
+        photo_url: formData.get('photo_url') as string,
+        updated_at: new Date()
+      })
+      .where(eq(accommodation.accommodation_id, parseInt(params.id)));
 
-    // Convertir FormData en objet
-    const updateData = {
-      name: formData.get('name') as string,
-      type: formData.get('type') as string,
-      address_line1: formData.get('address_line1') as string,
-      address_line2: formData.get('address_line2') as string || null,
-      city: formData.get('city') as string,
-      zipcode: formData.get('zipcode') as string,
-      country: formData.get('country') as string,
-      description: formData.get('description') as string,
-      photo_url: formData.get('photo_url') as string,
-      updated_at: new Date()
-    };
-
-    // Mise à jour dans la base de données
-    await db.update(accommodation)
-      .set(updateData)
-      .where(eq(accommodation.accommodation_id, id));
-
-    // Récupérer le logement mis à jour
-    const updatedAccommodation = await db
-      .select()
-      .from(accommodation)
-      .where(eq(accommodation.accommodation_id, id))
-      .then(results => results[0]);
-
-    return NextResponse.json(updatedAccommodation);
+    return Response.json(updatedProperty);
   } catch (error) {
     console.error('Erreur lors de la mise à jour:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Échec de la mise à jour' }, { status: 500 });
   }
 }
 
