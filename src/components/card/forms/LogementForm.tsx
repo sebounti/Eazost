@@ -77,7 +77,9 @@ const LogementForm = ({ logement, onSubmit, onDelete, onCancel }: LogementFormPr
         />
       )}
       <div className="space-y-2">
-        <CloudinaryFileUploader onUploadSuccess={handleImageUpload} />
+        <CloudinaryFileUploader
+		uploadPreset="properties_preset"
+		onUploadSuccess={handleImageUpload} />
       </div>
 
       <div className="space-y-2">

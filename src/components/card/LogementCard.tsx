@@ -1,62 +1,57 @@
 // components/LogementCard.tsx
 
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Accommodation, stayInfo } from "@/types";
-import LogementDialog from "./dialogs/LogementDialog";
-import InfoCardDialog from "./dialogs/InfoCardDialog";
+import { Accommodation } from "@/types";
 import ProductDialog from "./dialogs/ProductDialog";
 import AccessCodeDialog from "./dialogs/AccessCodeDialog";
-import OrderDialog from "./dialogs/OrderDialog";
+import OrderDialog from "@/components/card/dialogs/OrderDialog";
 import Image from "next/image";
 import { useAccommodationStore } from "@/stores/accommodationStore";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { MdEdit, MdAdd, MdCreditCard, MdShoppingCart, MdKey, MdShoppingBag } from "react-icons/md";
 import { IoDocumentText } from "react-icons/io5";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { type InfoCardFormData, CARDINFORMATION_TYPES } from "./forms/InfoCardForm";
+import { useStayInfoStore } from "@/stores/useStayInfoStore";
+import { Product } from "@/types/index";
 
+// Importez uniquement les composants de dialogue qui existent
+import LogementDialog from "./dialogs/LogementDialog";
+import InfoCardDialog from "./dialogs/InfoCardDialog";
 
-// Props pour le composant LogementCard
-type LogementCardProps = {
+// Props interface
+interface LogementCardProps {
   logement: Accommodation;
-  // Fonctions pour la gestion des images
-  onUpdateImage: (file: File) => Promise<void>;
-  // Fonctions pour la gestion des logements
-  onEditLogement: (formData: FormData) => void;
-  // Fonctions pour la ajouter des cartes d'information
-  onAddInfoCard: (logementId: number, formData: FormData) => Promise<void>;
-  // Fonctions pour la modifier des cartes d'information
-  onEditInfoCard: (logementId: number, cardId: number, formData: FormData) => void;
-  // Fonctions pour la gestion des produits
-  onAddProduct: (logementId: number, formData: FormData) => void;
-  // Fonctions pour la modifier des produits
-  onEditProduct: (logementId: number, productId: number, formData: FormData) => void;
-  // Fonctions pour la gestion des codes d'accès
+  onEditLogement: (formData: FormData) => Promise<void>;
+  onAddInfoCard: (logementId: number, data: InfoCardFormData) => Promise<void>;
+  onEditInfoCard: (logementId: number, cardId: number, data: InfoCardFormData) => void;
+  onAddProduct: (logementId: number, product: Product) => Promise<void>;
   onGenerateAccessCode: (logementId: number, startDateTime: Date, endDateTime: Date, email: string) => void;
-  // Fonctions pour effacer un code d'accès
-  onDeleteAccessCode: (logementId: number, code: string) => void;
-  // Fonctions pour ajouter une commande
   onAddOrder: (logementId: number, formData: FormData) => void;
-  // Fonctions pour la gestion des commandes
-  onEditOrder: (logementId: number, orderId: number, formData: FormData) => void;
-};
+  onDeleteAccessCode: (logementId: number, code: string) => void;
+}
 
 
-// Composant LogementCard
-const LogementCard = ({
+// Composant avec export nommé
+export default function LogementCard({
   logement,
-  onUpdateImage,
-  onEditLogement,
   onAddInfoCard,
-  onAddProduct,
-  onEditProduct,
-  onGenerateAccessCode,
-  onDeleteAccessCode,
-  onAddOrder,
   onEditInfoCard,
-}: LogementCardProps) => {
+  onAddProduct,
+  onGenerateAccessCode,
+  onAddOrder,
+  onDeleteAccessCode,
+}: LogementCardProps) {
+  const { stayInfo, fetchStayInfosByLogementId } = useStayInfoStore();
   const { deleteAccommodation, updateAccommodation } = useAccommodationStore();
 
 
@@ -73,6 +68,9 @@ const LogementCard = ({
 
   // LogementCard - Statut de chargement
   const [loading, setLoading] = useState(false);
+
+
+  /* --------- fonction logement ------------- */
 
   // Fonction pour supprimer un logement
   const handleDelete = async () => {
@@ -101,13 +99,20 @@ const LogementCard = ({
         const updatedData = await response.json();
         updateAccommodation(logement.accommodation_id, updatedData);
         toast.success("Logement modifié avec succès");
-      }
+      } else {
+		const errorData = await response.json();
+		toast.error(`Erreur : ${errorData.message || "Modification échouée"}`);
+	  }
     } catch (error) {
       console.error('Erreur lors de la modification:', error);
       toast.error("Erreur lors de la modification");
     }
   };
 
+
+  const handleGenerateCode = (data: any) => {
+    console.log("Code généré :", data);
+  };
 
   return (
     <div className="overflow-hidden border rounded-lg shadow-xl bg-slate-50 w-full h-[570px] flex flex-col">
@@ -123,13 +128,22 @@ const LogementCard = ({
           <h2 className="mb-2 text-2xl font-semibold">{logement.name}</h2>
 		  <h3 className="mb-2 text-lg text-gray-900">{logement.type}</h3>
 
-          <p className="mb-2 text-sm text-gray-500">{logement.InfoCard?.length || 0} carte(s) d'information</p>
+          {/* Cette ligne affiche le nombre de cartes d'information associées au logement.
+              - logement.stayInfo?.length : Accède au nombre de cartes de façon sécurisée avec l'opérateur ?.
+              - || 0 : Retourne 0 si stayInfo est null/undefined
+              - Le texte est en gris (text-gray-500) et petit (text-sm) avec une marge en bas (mb-2) */}
+          <p className="mb-2 text-sm text-gray-500">{logement.stayInfo?.length || 0} carte(s) d'information</p>
           <p className="mb-2 text-sm text-gray-500">{logement.products?.length || 0} produit(s) dans le shop</p>
           <p className="mb-4 text-sm text-gray-500">{logement.orders?.length || 0} commande(s)</p>
         </div>
 
+
+
         <div className="space-y-2 mt-auto">
-          <LogementDialog logement={logement} onSubmit={handleEdit} onDelete={handleDelete}>
+          <LogementDialog
+		  logement={logement}
+		  onSubmit={handleEdit}
+		  onDelete={handleDelete}>
             <button className="bg-amber-500 rounded-lg w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-amber-400 flex items-center justify-center gap-2">
               {loading ? <Loader2 className="text-xl animate-spin" /> : <MdEdit className="text-xl" />}
               Modifier le logement
@@ -142,6 +156,7 @@ const LogementCard = ({
               logementId={logement.accommodation_id}
               onAddInfoCard={onAddInfoCard}
               onEditInfoCard={onEditInfoCard}
+
             >
               <button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
                 <IoDocumentText className="text-xl" /> Nouvelle carte
@@ -149,19 +164,60 @@ const LogementCard = ({
             </InfoCardDialog>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" aria-label="Voir les cartes"
+                <Button
+                  onClick={() => fetchStayInfosByLogementId(logement.accommodation_id)}
                   className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2"
                 >
                   <MdCreditCard className="text-xl" /> Voir les cartes
                 </Button>
               </DialogTrigger>
+              <DialogContent className="max-w-4xl bg-slate-50 ">
+                <DialogHeader >
+                  <DialogTitle>Cartes d'information - {logement.name}</DialogTitle>
+                  <DialogDescription>
+                    Gérez les cartes d'information pour ce logement
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 max-h-[70vh] overflow-y-auto">
+                  {stayInfo.map((card) => (
+                    <div key={card.stay_info_id} className="bg-white p-4 rounded-xl shadow-xl border border-gray-300">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-lg">{card.title}</h3>
+                        <span className="text-sm text-gray-600 px-2 py-1 bg-amber-400 rounded">
+                          {card.category}
+                        </span>
+                      </div>
+                      {card.photo_url && (
+                        <div className="relative h-40 mb-2">
+                          <Image
+                            src={card.photo_url}
+                            alt={card.title}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                        </div>
+                      )}
+                      <p className=" text-gray-600 text-sm">{card.description}</p>
+                      <div className="mt-4 flex justify-end gap-2">
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
             </Dialog>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <ProductDialog
-              logementNom={logement.name}
-              onSubmit={(formData) => onAddProduct(logement.accommodation_id, formData)}
+              initialProduct={{
+                product_id: 0,
+                name: '',
+                description: '',
+                image_url: null,
+                price: 0,
+                stock: 0
+              }}
+              onSave={async (product: Product) => await onAddProduct(logement.accommodation_id, product)}
             >
             <button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
 				{loading ? <Loader2 className="text-xl animate-spin" /> : <MdAdd className="text-xl" />}
@@ -184,21 +240,14 @@ const LogementCard = ({
 
           <div className="grid grid-cols-2 gap-2">
             <AccessCodeDialog
-              logementNom={logement.name}
-              accommodationId={logement.accommodation_id}
-              onGenerateCode={(startDateTime, endDateTime, email) =>
-                onGenerateAccessCode(logement.accommodation_id, startDateTime, endDateTime, email)
-              }
-              onDeleteCode={(code) => onDeleteAccessCode(logement.accommodation_id, code)}
-            >
-              <button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
+				onSubmit={handleGenerateCode}>
+				<button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
                 <MdKey className="text-xl" /> Codes d'accès
               </button>
             </AccessCodeDialog>
             <OrderDialog
               logementNom={logement.name}
               products={logement.products}
-              onSubmit={(formData) => onAddOrder(logement.accommodation_id, formData)}
             >
               <button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
                 <MdShoppingBag className="text-xl" /> Commandes
@@ -209,6 +258,4 @@ const LogementCard = ({
       </div>
     </div>
   );
-};
-
-export default LogementCard;
+}

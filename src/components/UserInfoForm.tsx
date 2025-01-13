@@ -16,10 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ShadcnDatePicker } from "@/components/ui/date-picker";
 
 
-// Importation des fonctions pour formater les dates
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
-
 /**
  * formulaire de mise à jour des informations de l'utilisateur.
  *
@@ -188,7 +184,7 @@ export default function UserInfoForm() {
 							id="email"
 							name="email"
 							type="email"
-							value={formData.email}
+							value={user?.email || ''}
 							readOnly
 							className="mt-2 w-1/3"
 						/>

@@ -32,20 +32,18 @@ export const ShadcnDatePicker: React.FC<ShadcnDatePickerProps> = ({
 	endYear,
 	selected,
 	onSelect,
-	initialFocus,
-	placeholder,
 }) => {
 	const [error, setError] = useState<string | null>(null);
 	const defaultDate = new Date();
 
 	const handleDayChange = (day: string) => {
 	  const newDate = new Date((selected || defaultDate).getFullYear(), (selected || defaultDate).getMonth(), parseInt(day));
-	  if (isNaN(newDate.getTime())) {
+	  if (isNaN(newDate.getTime()) || newDate.getDate() !== parseInt(day)) {
 		setError("Date invalide");
-	  } else {
-		setError(null);
-		onSelect(newDate);
+		return;
 	  }
+	  setError(null);
+	  onSelect(newDate);
 	};
 
 	const handleMonthChange = (month: string) => {
@@ -69,21 +67,22 @@ export const ShadcnDatePicker: React.FC<ShadcnDatePickerProps> = ({
 	};
 
 	return (
-	  <div className="grid grid-cols-3 gap-4 max-w-[500px] dark:text-white">
+	  <div className="grid grid-cols-3 gap-6 max-w-[450px] dark:text-white">
 		{/* Sélection du jour */}
 		<Select onValueChange={handleDayChange}>
-		  <SelectTrigger className="h-auto shadow-sm focus:outline-0 min-h-[40px] min-w-[30px]">
+		  <SelectTrigger className="h-auto shadow-sm focus:outline-0 min-h-[40px] min-w-[20px] dark:bg-gray-800">
 			<SelectValue
 			  placeholder={
 				<div>
-				  <span className="text-muted-foreground pr-6 text-lg text-amber-600 font-semibold dark:text-white">Jours</span>
-				  {selected?.getDate() || "-"}
+				  <span className="text-muted-foreground pr-6 text-md text-gray-700 dark:text-gray-300">
+					{selected?.getDate() || "-"}
+				  </span>
 				</div>
 			  }
 			/>
 		  </SelectTrigger>
 		  <SelectContent>
-			<ScrollArea className="h-48 bg-slate-100">
+			<ScrollArea className="h-48 bg-slate-50">
 			  {Array.from({ length: 31 }, (_, i) => (
 				<SelectItem key={i + 1} value={(i + 1).toString()}>
 				  {i + 1}
@@ -93,20 +92,21 @@ export const ShadcnDatePicker: React.FC<ShadcnDatePickerProps> = ({
 		  </SelectContent>
 		</Select>
 
+
 		{/* Sélection du mois */}
 		<Select onValueChange={handleMonthChange}>
-		  <SelectTrigger className="h-auto shadow-sm focus:outline-0 min-w-[170px] pr-2">
+		  <SelectTrigger className="h-auto shadow-sm focus:outline-0 min-w-[100px]">
 			<SelectValue
 			  placeholder={
 				<div>
-				  <span className="text-muted-foreground pr-4 dark:text-white text-lg text-amber-600 font-bold">Mois</span>
+				  <span className="text-muted-foreground pr-2 dark:text-white text-md text-gray-700 "></span>
 				  {monthsFR[selected?.getMonth() || 0] || "-"}
 				</div>
 			  }
 			/>
 		  </SelectTrigger>
 		  <SelectContent>
-			<ScrollArea className="h-48 bg-slate-100">
+			<ScrollArea className="h-48 bg-slate-50">
 			  {monthsFR.map((month, index) => (
 				<SelectItem key={index} value={month}>
 				  {month}
@@ -116,20 +116,21 @@ export const ShadcnDatePicker: React.FC<ShadcnDatePickerProps> = ({
 		  </SelectContent>
 		</Select>
 
+
 		{/* Sélection de l'année */}
 		<Select onValueChange={handleYearChange}>
 		  <SelectTrigger className="h-auto shadow-sm focus:outline-0 min-w-[130px]">
 			<SelectValue
 			  placeholder={
 				<div>
-				  <span className="pr-4 dark:text-white text-lg text-amber-600 font-semibold">Année</span>
+				  <span className="pr-4 dark:text-white text-md text-gray-700"></span>
 				  {selected?.getFullYear() || "-"}
 				</div>
 			  }
 			/>
 		  </SelectTrigger>
 		  <SelectContent>
-			<ScrollArea className="h-48 bg-slate-100">
+			<ScrollArea className="h-48 bg-slate-50">
 			  {Array.from({ length: endYear - startYear + 1 }, (_, i) => (
 				<SelectItem key={i + startYear} value={(i + startYear).toString()}>
 				  {i + startYear}

@@ -3,30 +3,29 @@
 
 // Types pour les informations de séjour
 export type stayInfo = {
-	stayInfo_id: number;
+	stay_info_id: number;
 	accommodation_id: number;
 	title: string;
 	description: string;
-	photo_url?: string;
-	category: string;
-	status: string;
+	photo_url: string | null;
+	category: string | null;
 	created_at: Date;
 	updated_at: Date;
 };
 
 
-// Types pour les produits
-  export type Product = {
+export interface Product {
 	product_id: number;
-	uuid: string;
 	name: string;
 	description: string;
+	image_url: string | null;
 	price: number;
-	imageUrl?: string;
 	stock: number;
-	created_at: Date;
-	updated_at: Date;
-  };
+	uuid?: string;
+	created_at?: Date;
+	updated_at?: Date;
+	shop_id?: number;
+  }
 
   // Types pour les codes d'accès
   export interface AccessCode {
@@ -80,6 +79,7 @@ export type stayInfo = {
 	accessCodes?: AccessCode[];
 };
 
+// Types pour
 export interface UserInfo {
 	users_id: number | null;
 	user_name: string | null;

@@ -1,59 +1,33 @@
-// components/dialogs/AccessCodeDialog.tsx
+"use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useAccessCodeStore } from '@/stores/accessCodeStore';
-import { useEffect } from 'react';
-import { AccessCode } from '@/types';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import AccessCodeForm from "@/components/card/forms/AcessCodeForm";
+import { useState } from "react";
 
 type AccessCodeDialogProps = {
-  accommodationId: number;
-  logementNom: string;
-  onGenerateCode: (startDateTime: Date, endDateTime: Date, email: string) => void;
-  onDeleteCode: (code: string) => void;
+  onSubmit: (data: any) => void;
   children: React.ReactNode;
 };
 
-const AccessCodeDialog = ({ accommodationId, logementNom, onGenerateCode, onDeleteCode, children }: AccessCodeDialogProps) => {
-  const { accessCodes, isLoading, error, fetchAccessCodes } = useAccessCodeStore();
+const AccessCodeDialog = ({ onSubmit, children }: AccessCodeDialogProps) => {
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    fetchAccessCodes(accommodationId);
-  }, [accommodationId]);
-
-  const generateSignature = async (folder: string, timestamp: number) => {
-    const response = await fetch('/api/cloudinary/signature', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folder, timestamp }),
-    });
-    const data = await response.json();
-    return data.signature;
+  const handleSubmit = async (data: any) => {
+    await onSubmit(data);
+    setOpen(false);
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] bg-slate-50 rounded-lg">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-w-md mx-auto bg-white">
         <DialogHeader>
-          <DialogTitle>Codes d'accès</DialogTitle>
+          <DialogTitle>Générer un Code d'Accès</DialogTitle>
+          <DialogDescription>
+            Remplissez le formulaire pour générer un nouveau code d'accès
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          {isLoading && <p>Chargement des codes d'accès...</p>}
-          {error && <p>Erreur: {error}</p>}
-          {accessCodes.map((code, index) => (
-            <div key={index} className="p-4 border rounded-lg">
-              <p>Code: {code.code}</p>
-              <p>Début: {new Date(code.startDateTime).toLocaleString()}</p>
-              <p>Fin: {new Date(code.endDateTime).toLocaleString()}</p>
-              <p>État: {code.isActive ? "Actif" : "Inactif"}</p>
-              <Button variant="destructive" size="sm" onClick={() => onDeleteCode(code.code)}>Supprimer</Button>
-            </div>
-          ))}
-          {/* Ajouter le formulaire pour générer un code d'accès si nécessaire */}
-        </div>
+        <AccessCodeForm onSubmit={handleSubmit} />
       </DialogContent>
     </Dialog>
   );

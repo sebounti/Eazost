@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { IoImageOutline } from "react-icons/io5";
 
 
 interface CloudinaryFileUploaderProps {
-  onUploadSuccess: (url: string) => void;
-  disabled?: boolean;
+	uploadPreset: string;
+  	onUploadSuccess: (url: string) => void;
+  	disabled?: boolean;
 }
 
-const CloudinaryFileUploader = ({ onUploadSuccess, disabled = false }: CloudinaryFileUploaderProps) => {
+const CloudinaryFileUploader = ({ uploadPreset, onUploadSuccess, disabled = false }: CloudinaryFileUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<{
-    success?: string;
-    error?: string;
-  }>({});
-
+  
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,7 +21,7 @@ const CloudinaryFileUploader = ({ onUploadSuccess, disabled = false }: Cloudinar
       setIsUploading(true);
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || '');
+      formData.append('upload_preset', uploadPreset);
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
@@ -60,9 +58,10 @@ const CloudinaryFileUploader = ({ onUploadSuccess, disabled = false }: Cloudinar
         type="button"
         onClick={() => document.getElementById('cloudinary-upload')?.click()}
         disabled={disabled}
-        className="w-full bg-amber-500 text-slate-900 rounded-xl hover:bg-amber-400"
+        className="w-full bg-amber-300 text-slate-900 rounded-xl hover:bg-amber-400 flex items-center justify-center gap-2"
       >
-        {isUploading ? 'chargement en cours...' : 'Changer l\'image'}
+		{isUploading ? 'Téléchargement en cours...' : 'Ajouter une photo'}
+        <IoImageOutline size={50} />
       </Button>
     </div>
   );

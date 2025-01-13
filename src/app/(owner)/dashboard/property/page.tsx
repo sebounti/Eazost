@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import LogementCard from "@/components/card/LogementCard";
-import LogementForm from "@/components/card/forms/LogementForm";
-import { Accommodation } from "@/types";
-import { MdClose, MdAdd, MdEdit, MdCreditCard, MdShoppingCart, MdKey, MdShoppingBag } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import { useAccommodationStore } from "@/stores/accommodationStore";
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Toaster, toast } from "sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { type InfoCardFormData } from "@/components/card/forms/InfoCardForm";
+import LogementDialog from "@/components/card/dialogs/LogementDialog";
+import { useStayInfoStore } from "@/stores/useStayInfoStore";
+import { Accommodation, Product } from "@/types";
 
 
 // Ajout de la fonction pour upload sur Cloudinary
@@ -41,251 +41,290 @@ const uploadImageToCloudinary = async (file: File) => {
 
 // Page pour la gestion des logements
 const LogementsPage = memo(function LogementsPage() {
-  const { user, loading, initializeStore } = useAuthStore();
-  console.log('🔍 User:', user);
+  const { user, loading: authLoading, initializeStore } = useAuthStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
-  const [selectedCard, setSelectedCard] = useState<number | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // store pour les logements
   const {
     accommodationInfo,
     isLoading,
     error,
-    fetchAccommodationInfo
+    fetchAccommodationInfo,
+    updateAccommodation,
+    addAccommodation,
+    deleteAccommodation
   } = useAccommodationStore();
 
-  console.log('📦 AccommodationInfo:', accommodationInfo);
-  console.log('⏳ Loading states:', { loading, isLoading });
-  console.log('❌ Error:', error);
 
-  // Ajout des états pour le filtrage
-  const [filterType, setFilterType] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-
+  // Initialisation du store
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session');
-        const session = await response.json();
-        console.log('🔑 Session:', session);
-      } catch (error) {
-        console.error('❌ Erreur session:', error);
-      }
-    };
-
-    checkSession();
-  }, []);
-
-  useEffect(() => {
-    if (user?.user_id) {
-      console.log('🔄 Fetching accommodations for user:', user.user_id);
-      fetchAccommodationInfo(user.user_id);
-    }
-  }, [user, fetchAccommodationInfo]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
-  }, [error]);
-
-  useEffect(() => {
-    const init = async () => {
-      await initializeStore();
-    };
-    init();
+    initializeStore();
   }, [initializeStore]);
 
-  // Ajout du filtrage des logements
-  const filteredAccommodations = useMemo(() => {
-    if (!accommodationInfo) return [];
 
-    return accommodationInfo.filter(logement => {
-      const matchesType = filterType === 'all' || logement.type === filterType;
-      const matchesSearch = logement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          logement.city.toLowerCase().includes(searchTerm.toLowerCase());
+  // Fetch des logements
+  useEffect(() => {
+    if (user?.user_id && !authLoading) {
+      fetchAccommodationInfo(user.user_id);
+    }
+  }, [user?.user_id, authLoading]);
 
-      return matchesType && matchesSearch;
-    });
-  }, [accommodationInfo, filterType, searchTerm]);
 
-  // Fonction modifiée pour gérer l'upload d'image
-  const ajouterLogement = useCallback(async (formData: FormData) => {
+  // Filtrage des logements
+  const filteredAccommodations = accommodationInfo?.filter(logement => {
+    if (!logement || !logement.name) return false;
+
+    const matchesSearch = logement.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || logement.type === filterType;
+    return matchesSearch && matchesType;
+  });
+
+
+  // fonction pour les logements
+  // Modification d'un logement
+  const handleAddLogement = async (formData: FormData) => {
     try {
-      let imageUrl = null;
-      const photo = formData.get('photo_url') as File;
+      if (!user?.user_id) return;
 
-      if (photo) {
-        imageUrl = await uploadImageToCloudinary(photo);
-      }
-
+      // Créer le logement
+      const photoUrl = formData.get('photo_url') as string || '/images/default-image.png';
       const logementData = {
-        type: formData.get('type'),
-        name: formData.get('name'),
-        address_line1: formData.get('address_line1'),
-        address_line2: formData.get('address_line2'),
-        city: formData.get('city'),
-        zipcode: formData.get('zipcode'),
-        country: formData.get('country'),
-        description: formData.get('description'),
-        photo_url: imageUrl,
-        user_id: user?.user_id
+        users_id: user.user_id,
+        uuid: crypto.randomUUID(),
+        type: formData.get('type') as string || 'Appartement',
+        name: formData.get('name') as string,
+        address_line1: formData.get('address_line1') as string,
+        address_line2: formData.get('address_line2') as string || undefined,
+        city: formData.get('city') as string,
+        zipcode: formData.get('zipcode') as string,
+        country: formData.get('country') as string || 'France',
+        description: formData.get('description') as string || undefined,
+        photo_url: photoUrl
       };
 
-      const response = await fetch(`/api/properties/`, {
+      const response = await fetch('/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logementData),
       });
 
       if (response.ok) {
-        setIsDialogOpen(false);
-        fetchAccommodationInfo(user!.user_id);
+        const newLogement = await response.json();
+        addAccommodation(newLogement);
+
+        // Créer automatiquement un shop pour le nouveau logement
+        const createShopResponse = await fetch('/api/shop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accommodation_id: newLogement.accommodation_id,
+            name: `Shop ${newLogement.name}`,
+            description: `Boutique de ${newLogement.name}`,
+            created_at: new Date(),
+            updated_at: new Date()
+          })
+        });
+
+        if (!createShopResponse.ok) {
+          console.error('Erreur lors de la création du shop');
+        }
+
+        await fetchAccommodationInfo(user.user_id);
+        toast.success("Logement et boutique ajoutés avec succès");
+      } else {
+        const error = await response.json();
+        toast.error(`Erreur: ${error.message}`);
       }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout:', error);
+      console.error('Erreur:', error);
+      toast.error("Erreur lors de l'ajout du logement");
     }
-  }, [user, fetchAccommodationInfo]);
+  };
+
+// Modification d'un logement
+  const handleEdit = async (formData: FormData) => {
+    const logementId = Number(formData.get("id"));
+    const updatedData = {
+      name: formData.get("name") as string,
+      description: formData.get("description") as string,
+    };
+
+    const response = await fetch(`/api/properties/${logementId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedData),
+    });
+
+    if (response.ok) {
+      const updatedLogement = await response.json();
+      updateAccommodation(logementId, updatedLogement);
+    }
+  };
+
+  const handleDelete = async (logementId: number) => {
+    deleteAccommodation(logementId);
+  };
 
 
-  // Fonction pour mettre à jour l'image d'un logement existant
-  const updatePropertyImage = useCallback(async (propertyId: number, file: File) => {
+  // Handlers pour les actions sur les logements
+  const handleUpdateImage = async (file: File) => {
     try {
-      const imageUrl = await uploadImageToCloudinary(file);
+      toast.success("Image mise à jour avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour de l'image");
+    }
+  };
 
-      const response = await fetch(`/api/properties/${propertyId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: imageUrl }),
+
+  // fonction pour les cartes d'information
+  // Ajout d'une carte d'information
+  const handleAddInfoCard = async (logementId: number, data: InfoCardFormData) => {
+    try {
+      await useStayInfoStore.getState().addStayInfo({
+        ...data,
+        accommodation_id: logementId,
+        stay_info_id: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+        photo_url: data.photo_url || null
       });
-
-      if (response.ok) {
-        fetchAccommodationInfo(user!.user_id);
-      }
+      toast.success("Carte d'information ajoutée");
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'image:', error);
+      toast.error("Erreur lors de l'ajout de la carte");
     }
-  }, [user, fetchAccommodationInfo]);
+  };
 
-
-  // Fonction pour modifier un logement
-  const editLogement = useCallback(async (logementId: number, formData: FormData) => {
+  // Modification de la carte d'information
+  const handleEditInfoCard = async (logementId: number, cardId: number, data: InfoCardFormData) => {
     try {
-      let imageUrl = null;
-      const photo = formData.get('photo_url') as File;
+      await useStayInfoStore.getState().updateStayInfo(cardId, {
+        ...data,
+        updated_at: new Date()
+      });
+      toast.success("Carte d'information modifiée");
+    } catch (error) {
+      toast.error("Erreur lors de la modification de la carte");
+    }
+  };
 
-      // Si une nouvelle photo a été uploadée
-      if (photo instanceof File) {
-        imageUrl = await uploadImageToCloudinary(photo);
+  // fonction pour les produits
+  // Ajout d'un produit
+  const handleAddProduct = async (logementId: number, product: Product): Promise<void> => {
+    try {
+      // Récupérer le shop existant pour ce logement
+      const shopResponse = await fetch(`/api/shop?accommodationId=${logementId}`);
+      const shopData = await shopResponse.json();
+
+      if (!shopData.data?.shop?.length) {
+        throw new Error('Aucun shop trouvé pour ce logement');
       }
 
-	  // Ajout des données du logement
-      const data: Partial<Accommodation> = {
-        type: formData.get('type') as string,
-        name: formData.get('name') as string,
-        address_line1: formData.get('address_line1') as string,
-        address_line2: formData.get('address_line2') as string,
-        city: formData.get('city') as string,
-        zipcode: formData.get('zipcode') as string,
-        country: formData.get('country') as string,
-        description: formData.get('description') as string,
-        photo_url: imageUrl || formData.get('photo_url') as string, // Utilise l'ancienne URL si pas de nouvelle photo
+      const shopId = shopData.data.shop[0].shop_id;
+
+      // Créer le produit avec le shop_id existant
+      const productData = {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        stock: product.stock,
+        image_url: product.image_url || null,
+        shop_id: shopId,
+        uuid: crypto.randomUUID()
       };
 
-      const response = await fetch(`/api/properties/${logementId}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/shop/products`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(productData)
       });
 
-      if (response.ok) {
-        // Recharge uniquement après confirmation de la mise à jour
-        await fetchAccommodationInfo(user!.user_id);
-      } else {
-        throw new Error('Erreur lors de la modification');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de l\'ajout du produit');
       }
+
+      toast.success("Produit ajouté avec succès");
     } catch (error) {
-      console.error('Erreur lors de la modification:', error);
+      console.error('Erreur complète:', error);
+      toast.error(error instanceof Error ? error.message : "Erreur lors de l'ajout du produit");
     }
-  }, [user, fetchAccommodationInfo]);
+  };
 
+  // Modification d'un produit
+  const handleEditProduct = async (logementId: number, productId: number, formData: FormData) => {
+    try {
+      toast.success("Produit modifié avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de la modification du produit");
+    }
+  };
 
-  // Fonction pour fermer le modal proprement
-  const handleCloseDialog = useCallback(() => {
-    setIsDialogOpen(false);
-    setSelectedCard(null);
-    // S'assurer que le scroll est réactivé
-    document.body.style.overflow = 'unset';
-  }, []);
+  // fonction pour les codes d'accès
+  // Génération d'un code d'accès
+  const handleGenerateAccessCode = async (logementId: number, startDateTime: Date, endDateTime: Date, email: string) => {
+    try {
+      toast.success("Code d'accès généré avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de la génération du code");
+    }
+  };
 
+  // Suppression d'un code d'accès
+  const handleDeleteAccessCode = async (logementId: number, code: string) => {
+    try {
+      toast.success("Code d'accès supprimé");
+    } catch (error) {
+      toast.error("Erreur lors de la suppression du code");
+    }
+  };
 
-  // Fonction pour ouvrir le modal
-  const handleOpenDialog = useCallback((cardId?: number) => {
-    setSelectedCard(cardId || null);
-    setIsDialogOpen(true);
-    // Éviter le scroll en arrière-plan
-    document.body.style.overflow = 'hidden';
-  }, []);
+  // fonction pour les commandes
 
-  if (loading || isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  // Ajout d'une commande
+  const handleAddOrder = async (logementId: number, formData: FormData) => {
+    try {
+      toast.success("Commande ajoutée avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de l'ajout de la commande");
+    }
+  };
 
+  // Modification d'une commande
+  const handleEditOrder = async (logementId: number, orderId: number, formData: FormData) => {
+    try {
+      toast.success("Commande modifiée avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de la modification de la commande");
+    }
+  };
+
+  if (authLoading) return <LoadingSpinner />;
   if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertDescription>
-            Vous devez être connecté pour accéder à cette page.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!accommodationInfo) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Alert className="max-w-md">
-          <AlertDescription>
-            Aucun logement trouvé. Commencez par enun !
-          </AlertDescription>
-        </Alert>
+      <div className="text-center p-4">
+        <p>Veuillez vous connecter pour accéder à cette page</p>
       </div>
     );
   }
 
   return (
     <>
-	<div className="flex items-center gap-4 p-4">
-      <SidebarTrigger className="text-xl" />
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink className="text-xl" href="/dashboard">Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-		  <BreadcrumbItem>
-            <BreadcrumbLink className="text-xl" href="/dashboard/property">Logement</BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    </div>
+      <div className="flex items-center gap-4 p-4">
+        <SidebarTrigger className="text-xl" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink className="text-md" href="/dashboard">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink className="text-xl text-amber-500" href="/dashboard/property">Logement</BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
       <Toaster position="top-center" />
       <ErrorBoundary>
         <div className="container p-4 mx-auto">
@@ -293,10 +332,11 @@ const LogementsPage = memo(function LogementsPage() {
             Gestion des Logements
           </h1>
           <p className="mb-8 text-lg text-muted-foreground p-2">
-            Gérez vos propriétés, codes d&apos;accès, Carte info logement et commandes en un seul endroit
+            Gérez vos propriétés, codes d&apos;accès, vos commandes, ajouter des  Carte d'information logement en un seul endroit
           </p>
 
-          {/* Ajout des contrôles de filtrage */}
+
+          {/* Contrôles de filtrage */}
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <input
               type="text"
@@ -314,15 +354,15 @@ const LogementsPage = memo(function LogementsPage() {
               <option value="Appartement">Appartement</option>
               <option value="Maison">Maison</option>
               <option value="Studio">Studio</option>
-			  <option value="loft">Loft</option>
+              <option value="loft">Loft</option>
               <option value="Villa">Villa</option>
             </select>
           </div>
 
+
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Carte pour ajouter un logement */}
-            <div className="overflow-hidden border rounded-xl shadow-sm bg-slate-50 w-full h-[570px] flex flex-col">
-              {/* Section image simulée avec un fond */}
+            {/* Carte d'ajout */}
+            <div className="overflow-hidden border rounded-lg shadow-sm bg-slate-50 w-full h-[570px] flex flex-col">
               <div className="w-full h-48 bg-amber-100 flex items-center justify-center shrink-0">
                 <span className="text-6xl text-amber-400">+</span>
               </div>
@@ -330,91 +370,41 @@ const LogementsPage = memo(function LogementsPage() {
               <div className="p-4 flex flex-col h-full">
                 <div>
                   <h2 className="mb-2 text-2xl font-semibold">Nouveau logement</h2>
-				  <h3 className="mb-2 text-xl text-gray-500">Type de logement</h3>
-                  <p className="mb-2 text-sm text-gray-500"> {filteredAccommodations.length} carte(s) d'information</p>
-                  <p className="mb-2 text-sm text-gray-500"> {filteredAccommodations.length} produit(s) dans le shop</p>
-                  <p className="mb-4 text-sm text-gray-500"> {filteredAccommodations.length} commande(s)</p>
+                   <h3 className="mb-2 text-xl text-gray-500">Type de logement</h3>
                 </div>
 
-                <div className="space-y-2 space-x-2">
-                  <button
-                    onClick={() => handleOpenDialog()}
-                    className="bg-amber-500 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-amber-400 flex items-center justify-center gap-2"
-                  >
-                    <MdAdd className="text-xl" /> Ajouter un logement
-                  </button>
+                <div className="space-y-2 mt-24">
+				<LogementDialog onSubmit={handleAddLogement}>
+					<button className="bg-amber-500 rounded-lg w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-amber-400 flex items-center justify-center gap-2">
+						<MdAdd className="text-xl" /> Ajouter un logement
+					</button>
+				</LogementDialog>
 
 
-				  <div className="text-xl space-x-4 text-center text-gray-500">
-					<h2 className="text-xl text-gray-500 animate-pulse">Vous pouvez ajouter un logement en cliquant sur le bouton ci-dessus</h2>
-				</div>
-
+                  <div className="text-xl space-x-4 text-center text-gray-500">
+                    <h2 className="text-xl text-gray-500 animate-pulse mt-10">
+                      Vous pouvez ajouter un logement en cliquant sur le bouton ci-dessus
+                    </h2>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Liste des logements filtrés */}
-            {filteredAccommodations.map((logement) => (
+            {/* Liste des logements */}
+            {(filteredAccommodations ?? []).map((logement) => (
               <LogementCard
                 key={logement.accommodation_id}
                 logement={logement}
-                onUpdateImage={(file) => updatePropertyImage(logement.accommodation_id, file)}
-                onEditLogement={(formData) => editLogement(logement.accommodation_id, formData)}
-                onAddInfoCard={async (logementId: number, formData: FormData) => {
-                  try {
-                    // Logique d'ajout de carte
-                    console.log("Ajouter carte", logementId);
-                    return Promise.resolve();
-                  } catch (error) {
-                    return Promise.reject(error);
-                  }
-                }}
-                onEditInfoCard={() => {
-                  console.log("Modifier carte", logement.accommodation_id);
-                }}
-                onAddProduct={() => {
-                  console.log("Ajouter produit", logement.accommodation_id);
-                }}
-                onEditProduct={( ) => {
-                  console.log("Modifier produit", logement.accommodation_id);
-                }}
-                onGenerateAccessCode={() => {
-                  console.log("Générer code d'accès", logement.accommodation_id);
-                }}
-                onDeleteAccessCode={() => {
-                  console.log("Supprimer code d'accès", logement.accommodation_id);
-                }}
-                onAddOrder={() => {
-                  console.log("Ajouter commande", logement.accommodation_id);
-                }}
-                onEditOrder={() => {
-                  console.log("Modifier commande", logement.accommodation_id);
-                }}
+                onEditLogement={handleEdit}
+                onAddInfoCard={handleAddInfoCard}
+                onEditInfoCard={handleEditInfoCard}
+                onAddProduct={handleAddProduct}
+                onGenerateAccessCode={handleGenerateAccessCode}
+                onDeleteAccessCode={handleDeleteAccessCode}
+                onAddOrder={handleAddOrder}
               />
             ))}
           </div>
-
-          {/* Modal avec LogementForm */}
-          <Dialog open={isDialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
-            <DialogContent className="sm:max-w-2xl bg-slate-50 rounded-xl shadow-lg overflow-hidden w-full max-w-2xl">
-              <DialogTitle>
-                {selectedCard ? 'Modifier le logement' : 'Ajouter un logement'}
-              </DialogTitle>
-              <DialogDescription>
-                Remplissez les informations ci-dessous pour {selectedCard ? 'modifier' : 'ajouter'} un logement.
-              </DialogDescription>
-              <div className="max-h-[80vh] overflow-y-auto">
-                <LogementForm
-                  onSubmit={(formData) =>
-                    selectedCard
-                      ? editLogement(selectedCard, formData)
-                      : ajouterLogement(formData)
-                  }
-                  onCancel={handleCloseDialog}
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </ErrorBoundary>
     </>

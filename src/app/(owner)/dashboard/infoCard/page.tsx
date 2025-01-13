@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import LogementForm from "@/components/card/forms/LogementForm";
 import { MdClose, MdAdd, MdEdit, MdCreditCard } from "react-icons/md";
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,6 +13,11 @@ import { useAccommodationStore } from "@/stores/accommodationStore";
 import { type Accommodation, type stayInfo } from '@/types';
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { useSession } from "next-auth/react";
+import InfoCardForm from "@/components/card/forms/InfoCardForm";
+import OrderDialog from "@/components/card/dialogs/OrderDialog";
+import OrderCardForm from "@/components/card/forms/OrderCardForm";
+import { CARDINFORMATION_TYPES, InfoCardFormData } from "@/components/card/forms/InfoCardForm";
 
 const apiService = {
   fetchStayInfo: (userId: string) => fetch(`/api/stayInfo/${userId}`),
@@ -33,9 +37,10 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	  stayInfo,
 	  isLoading,
 	  error,
-	  fetchstayInfo
+	  fetchStayInfos
 	} = useStayInfoStore();
 	const { accommodationInfo: accommodation, fetchAccommodationInfo } = useAccommodationStore();
+	const { data: session } = useSession();
 
 	// Ajout des états pour le filtrage
 	const [filterType, setFilterType] = useState<string>('all');
@@ -48,7 +53,7 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	  if (user?.user_id) {
 		// Chargez les données en parallèle
 		Promise.all([
-		  fetchstayInfo(String(user.user_id)),
+		  fetchStayInfos(String(user.user_id)),
 		  fetchAccommodationInfo(user.user_id)
 		]);
 	  }
@@ -117,55 +122,105 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	  }
 	};
 
-	const onEditInfoCard = async (stayInfoId: number, formData: FormData) => {
+	// Modification d'une carte d'information
+	const onEditInfoCard = async (stayInfoId: number, data: {
+	  title: string;
+	  category: typeof CARDINFORMATION_TYPES[number];
+	  description: string;
+	  accommodation_id: number;
+	  photo_url: string | null | undefined;
+	}) => {
 	  try {
 		await fetch(`/api/stayInfo/${stayInfoId}`, {
 		  method: 'PUT',
-		  body: formData
+		  headers: { 'Content-Type': 'application/json' },
+		  body: JSON.stringify(data)
 		});
+
+		// Rafraîchir les données après la modification
+		if (user?.user_id) {
+		  await fetchStayInfos(String(user.user_id));
+		}
+
 		toast.success("Carte d'information mise à jour avec succès");
 	  } catch (error) {
 		toast.error("Erreur lors de la mise à jour de la carte");
 	  }
 	};
 
-	const onAddInfoCard = async (formData: FormData) => {
+	// Ajout d'une carte d'information
+	const handleAddInfoCard = async (logementId: number, data: InfoCardFormData) => {
 	  try {
-		await fetch('/api/stayInfo', {
+		console.log("Tentative création carte:", { logementId, data });
+
+		const cardData = {
+		  ...data,
+		  accommodation_id: logementId,
+		  created_at: new Date(),
+		  updated_at: new Date()
+		};
+
+		// Utiliser le chemin complet
+		const apiUrl = `${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/stayInfo`;
+		console.log("Envoi requête à:", apiUrl);
+		console.log("Données envoyées:", cardData);
+
+		const response = await fetch(apiUrl, {
 		  method: 'POST',
-		  body: formData
+		  headers: {
+			'Content-Type': 'application/json',
+			'Accept': 'application/json'
+		  },
+		  body: JSON.stringify(cardData)
+		}).catch(error => {
+		  console.error("Erreur fetch:", error);
+		  throw error;
 		});
-		toast.success("Carte d'information ajoutée avec succès");
-		handleCloseDialog();
+
+		console.log("Status réponse:", response.status);
+		const responseText = await response.text();
+		console.log("Réponse brute:", responseText);
+
+		if (!response.ok) {
+		  throw new Error(`Erreur HTTP: ${response.status} - ${responseText}`);
+		}
+
+		const result = JSON.parse(responseText);
+		console.log("Résultat création:", result);
+
+		await refreshData();
+		toast.success('Carte créée avec succès');
 	  } catch (error) {
-		toast.error("Erreur lors de l'ajout de la carte");
+		console.error('Erreur création détaillée:', error);
+		toast.error('Erreur lors de la création');
+		throw error;
 	  }
 	};
 
+	// Suppression d'une carte d'information
 	const onDeleteInfoCard = async (cardId: number) => {
 	  try {
 		await fetch(`/api/stayInfo/${cardId}`, {
 		  method: 'DELETE'
 		});
-		await fetchstayInfo(String(user!.user_id));
+		await fetchStayInfos(String(user!.user_id));
 		toast.success("Carte supprimée avec succès");
 	  } catch (error) {
 		toast.error("Erreur lors de la suppression");
 	  }
 	};
 
+	// Rafraîchissement des données
+	const refreshData = useCallback(async () => {
+	  if (user?.user_id) {
+		try {
+		  await fetchStayInfos(String(user.user_id));
+		} catch (error) {
+		  console.error('Erreur rafraîchissement:', error);
+		}
+	  }
+	}, [user?.user_id, fetchStayInfos]);
 
-	if (!user) {
-	  return (
-		<div className="flex justify-center items-center min-h-screen">
-		  <Alert variant="destructive" className="max-w-md">
-			<AlertDescription>
-			  Vous avez été déconnecté. Veuillez vous reconnecter pour accéder à cette page.
-			</AlertDescription>
-		  </Alert>
-		</div>
-	  );
-	}
 
 	if (isLoading) {
 	  return (
@@ -186,11 +241,11 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink className="text-xl" href="/dashboard">Dashboard</BreadcrumbLink>
+            <BreadcrumbLink className="text-md" href="/dashboard">Dashboard</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
 		  <BreadcrumbItem>
-            <BreadcrumbLink className="text-xl" href="/dashboard/Carte-info">Carte d'Information</BreadcrumbLink>
+            <BreadcrumbLink className="text-xl text-amber-500" href="/dashboard/Carte-info">Carte d'Information</BreadcrumbLink>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -202,7 +257,7 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 				Gestion des cartes d'information
 			  </h1>
 			  <p className="mb-8 text-lg text-muted-foreground p-2 ">
-				Gérez ici vos Carte info logement
+				Gérez ici toutes vos Cartes d'information de vos logements
 			  </p>
 
 			  {/* Ajout des contrôles de filtrage */}
@@ -243,6 +298,7 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 				</select>
 			  </div>
 
+
 			  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
 				{/* Liste des cartes d'information filtrées */}
@@ -251,27 +307,19 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 					key={cardInfo.stay_info_id}
 					cardInfo={cardInfo}
 					onUpdateImage={(file: File) => onUpdateImage(cardInfo.stay_info_id, file)}
-					onEditInfoCard={(_, cardId, formData) => onEditInfoCard(cardId, formData)}
-					onAddInfoCard={(_, formData) => onAddInfoCard(formData)}
-					onDeleteInfoCard={async (_, cardId: number) => {
-					  try {
-						// Logique d'ajout de carte
-						console.log("Ajouter carte", cardId);
-						return Promise.resolve();
-					  } catch (error) {
-						return Promise.reject(error);
-					  }
-					}}
+					onEditInfoCard={(logementId, cardId, formData) => onEditInfoCard(cardId, formData)}
+					onAddInfoCard={(_, formData) => handleAddInfoCard(cardInfo.accommodation_id, formData)}
+					onDeleteInfoCard={onDeleteInfoCard}
 				  />
 				))}
 			  </div>
+
 
 			  {/* Modal avec LogementForm */}
 			  {isDialogOpen && (
 				<div
 				  className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 p-4 z-50"
 				  onClick={(e) => {
-					// Fermer le modal uniquement si on clique sur l'arrière-plan
 					if (e.target === e.currentTarget) {
 					  handleCloseDialog();
 					}
@@ -291,11 +339,12 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 					</div>
 
 					<div className="p-4 max-h-[80vh] overflow-y-auto">
-					  <LogementForm
+					  <InfoCardForm
+						logementId={accommodation?.[0]?.accommodation_id ?? 0}
 						onSubmit={(formData) =>
-						  selectedCard
-							? onEditInfoCard(selectedCard, formData)
-							: onAddInfoCard(formData)
+							selectedCard
+								? onEditInfoCard(selectedCard, formData)
+								: handleAddInfoCard(accommodation?.[0]?.accommodation_id ?? 0, formData)
 						}
 						onCancel={handleCloseDialog}
 					  />

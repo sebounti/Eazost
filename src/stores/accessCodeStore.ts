@@ -6,6 +6,8 @@ interface AccessCodeStore {
   isLoading: boolean;
   error: string | null;
   fetchAccessCodes: (accommodationId: number) => Promise<void>;
+  addAccessCode: (accessCode: AccessCode) => Promise<void>;
+  deleteAccessCode: (accessCode: AccessCode) => Promise<void>;
 }
 
 export const useAccessCodeStore = create<AccessCodeStore>((set) => ({
@@ -36,5 +38,32 @@ export const useAccessCodeStore = create<AccessCodeStore>((set) => ({
         error: error instanceof Error ? error.message : 'Une erreur est survenue'
       });
     }
+  },
+
+  // ajouter un code d'accès
+  addAccessCode: async (accessCode: AccessCode) => {
+    try {
+      set({ isLoading: true, error: null });
+    } catch (error) {
+      set({
+        accessCodes: [],
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Une erreur est survenue'
+      });
+    }
+  },
+
+  // supprimer un code d'accès
+  deleteAccessCode: async (accessCode: AccessCode) => {
+    try {
+      set({ isLoading: true, error: null });
+    } catch (error) {
+      set({
+        accessCodes: [],
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Une erreur est survenue'
+      });
+    }
   }
+  
 }));

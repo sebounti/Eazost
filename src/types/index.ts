@@ -19,6 +19,13 @@ export type Accommodation = {
   photo_url?: string | null;
   created_at?: Date;
   updated_at?: Date;
+  stayInfo?: {
+    stay_info_id: number;
+    title: string;
+    description: string;
+    category: string;
+    photo_url: string | null;
+  }[];
 };
 
 export interface InfoCard {
@@ -29,12 +36,27 @@ export interface InfoCard {
   imageUrl?: string;
 }
 
-interface stayInfo {
+export interface stayInfo {
+  stay_info_id: number;
   accommodation_id: number;
-  stayInfo_id: number;
-  type: string;
-  title: string;
+  users_id: string;
+  created_at: Date;
+  updated_at: Date;
   description: string;
   photo_url: string | null;
+  title: string;
+  category: string | null;
+}
+
+export interface Product {
+  product_id: number;
   name: string;
+  description: string;
+  image_url: string | null;
+  price: number;
+  stock: number;
+  uuid?: string;
+  created_at?: Date;
+  updated_at?: Date;
+  shop_id?: number;
 }

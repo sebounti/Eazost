@@ -1,6 +1,7 @@
 export type AccountType = 'owner' | 'user';
 
 export interface User {
+  id: number;
   user_id: string;
   email: string;
   account_type: string;

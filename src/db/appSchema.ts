@@ -1,5 +1,6 @@
 import { mysqlTable, varchar, timestamp, int, boolean, decimal, date, text } from 'drizzle-orm/mysql-core';
 import { users } from './authSchema';
+import { relations } from 'drizzle-orm';
 
 // Table "Users_info"
 export const usersInfo = mysqlTable('users_info', {
@@ -19,6 +20,19 @@ export const usersInfo = mysqlTable('users_info', {
 });
 
 
+// Table "Stay_info"
+export const stayInfo = mysqlTable('stay_info', {
+	stay_info_id: int('stay_info_id').primaryKey().autoincrement(),
+	accommodation_id: int('accommodation_id').notNull(),
+	title: varchar('title', { length: 255 }).notNull(),
+	description: text('description').notNull(),
+	category: varchar('category', { length: 100 }),
+	photo_url: varchar('photo_url', { length: 255 }),
+	created_at: timestamp('created_at').defaultNow().notNull(),
+	updated_at: timestamp('updated_at').defaultNow().notNull()
+});
+
+
 // Table "Accommodation"
 export const accommodation = mysqlTable('accommodation', {
 	accommodation_id: int('accommodation_id').primaryKey().autoincrement(),
@@ -34,8 +48,12 @@ export const accommodation = mysqlTable('accommodation', {
 	description: varchar('description', { length: 1000 }),
 	photo_url: varchar('photo_url', { length: 255 }),
 	created_at: timestamp('created_at').defaultNow(),
-	updated_at: timestamp('updated_at').defaultNow().onUpdateNow(),
+	updated_at: timestamp('updated_at').defaultNow().onUpdateNow()
 });
+
+export const accommodationRelations = relations(accommodation, ({ many }) => ({
+	stayInfo: many(stayInfo)
+}));
 
 
 // Table "Access_code"
@@ -73,19 +91,6 @@ export const product = mysqlTable('product', {
 	created_at: timestamp('created_at').defaultNow(),
 	updated_at: timestamp('updated_at').defaultNow().onUpdateNow(),
 	shop_id: int('shop_id').notNull().references(() => shop.shop_id),
-});
-
-
-// Table "Stay_info"
-export const stayInfo = mysqlTable('stay_info', {
-	stay_info_id: int('stay_info_id').primaryKey().autoincrement(),
-	accommodation_id: int('accommodation_id').notNull().references(() => accommodation.accommodation_id),
-	title: varchar('title', { length: 255 }).notNull(),
-	description: varchar('description', { length: 1000 }).notNull(),
-	photo_url: varchar('photo_url', { length: 255 }),
-	category: varchar("category", { length: 255 }),
-	created_at: timestamp('created_at').defaultNow(),
-	updated_at: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
 
@@ -158,3 +163,10 @@ export const favorite = mysqlTable('favorite', {
 	property_id: int('property_id').notNull().references(() => accommodation.accommodation_id),
 	created_at: timestamp('created_at').defaultNow(),
 });
+
+export const stayInfoRelations = relations(stayInfo, ({ one }) => ({
+	accommodation: one(accommodation, {
+		fields: [stayInfo.accommodation_id],
+		references: [accommodation.accommodation_id],
+	}),
+}));

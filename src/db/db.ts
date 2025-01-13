@@ -13,14 +13,14 @@ if (!process.env.DATABASE_HOST || !process.env.DATABASE_USERNAME || !process.env
 }
 
 // Creation du pool de connection
-const pool = mysql.createPool({
+export const pool = mysql.createPool({
 	host: process.env.DATABASE_HOST,
 	user: process.env.DATABASE_USERNAME,
 	password: process.env.DATABASE_PASSWORD,
 	database: process.env.DATABASE_NAME,
 	waitForConnections: true,
 	connectionLimit: 10,
-	queueLimit: 0
+	queueLimit: 50
 });
 
 // Test de la connexion
@@ -40,5 +40,6 @@ export const db = drizzle(pool, {
 		...appSchema,
 		...authSchema
 	},
-	mode: 'default'
+	mode: 'default',
+	logger: true
 });

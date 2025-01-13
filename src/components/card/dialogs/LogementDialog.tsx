@@ -12,15 +12,22 @@ type LogementDialogProps = {
   children: React.ReactNode;
 };
 
-const LogementDialog = ({ logement, onSubmit, onDelete, children }: LogementDialogProps) => {
+export default function LogementDialog({ logement, onSubmit, onDelete, children }: LogementDialogProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleFormSubmit = async (formData: FormData) => {
+    await onSubmit(formData);
+    setOpen(false);  // Ferme le dialog après soumission
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
       <DialogContent className="p-0 bg-white rounded-xl shadow-lg overflow-hidden w-full max-w-2xl">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="text-2xl font-bold">
+        <DialogHeader className="p-4 border-b bg-amber-500">
+          <DialogTitle className="text-2xl font-bold  ">
             {logement ? 'Modifier le logement' : 'Ajouter un logement'}
           </DialogTitle>
           <DialogDescription>
@@ -33,14 +40,12 @@ const LogementDialog = ({ logement, onSubmit, onDelete, children }: LogementDial
         <div className="p-4 max-h-[80vh] overflow-y-auto">
           <LogementForm
             logement={logement}
-            onSubmit={onSubmit}
+            onSubmit={handleFormSubmit}
             onDelete={onDelete}
-            onCancel={() => {}}
+            onCancel={() => setOpen(false)}
           />
         </div>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default LogementDialog;
+}

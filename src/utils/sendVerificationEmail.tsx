@@ -36,12 +36,21 @@ export async function sendVerificationEmail(email: string, token: string) {
 		subject : 'Veuillez vérifier votre email',
 		html :`
 
-		<p>Bonjour,</p>
-      	<p>Merci de vous être inscrit. Veuillez cliquer sur le lien suivant pour vérifier votre adresse email :</p>
-     	<a href="${verificationUrl}">Vérifier mon email</a>
-     	<p>Si vous n'avez pas demandé cette vérification, veuillez ignorer cet email.</p>
-   		<p>Merci</p>`,
-  		};
+		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+			<img src="${process.env.NEXT_PUBLIC_BASE_URL}/logo.png" alt="Logo" style="max-width: 200px; margin-bottom: 20px;"/>
+			<h2 style="color: #333;">Bienvenue sur notre plateforme !</h2>
+			<p style="color: #666; line-height: 1.5;">Cher(e) utilisateur(trice),</p>
+			<p style="color: #666; line-height: 1.5;">Nous vous remercions d'avoir créé un compte sur notre plateforme. Pour finaliser votre inscription et accéder à l'ensemble de nos services, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :</p>
+			<div style="text-align: center; margin: 30px 0;">
+				<a href="${verificationUrl}" style="background-color: #fbbf24; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Vérifier mon adresse email</a>
+			</div>
+			<p style="color: #666; line-height: 1.5;">Si le bouton ne fonctionne pas, vous pouvez copier et coller le lien suivant dans votre navigateur :</p>
+			<p style="color: #666; word-break: break-all;">${verificationUrl}</p>
+			<p style="color: #666; line-height: 1.5;">Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.</p>
+			<hr style="border: 1px solid #eee; margin: 30px 0;"/>
+			<p style="color: #999; font-size: 12px;">Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+		</div>`,
+		};
 
 
   try {

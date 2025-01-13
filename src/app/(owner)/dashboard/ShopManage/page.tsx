@@ -37,28 +37,60 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { useAccommodationStore } from "@/stores/accommodationStore"
+import { shop as shopSchema } from "@/db/appSchema"
+import { useAuthStore } from "@/stores/authStore"
+import { useStoreProduct } from "@/stores/StoreProduct"
+
+// Définir le composant avant son utilisation
+const ShopNameComponent = ({ shopId }: { shopId: number }) => {
+  const { shop, fetchShopInfo } = useStoreProduct();
+
+  useEffect(() => {
+    fetchShopInfo(shopId);
+  }, [shopId, fetchShopInfo]);
+
+  if (!shop || shop.length === 0) {
+    return <span className="text-gray-400">Nom du magasin non disponible</span>;
+  }
+  return <span>{shop[0].name}</span>;
+};
 
 export default function ShopManage() {
-  // Simuler le chargement des données
-  const isLoading = false
+  const { user } = useAuthStore()
+  const { accommodationInfo, fetchAccommodationInfo } = useAccommodationStore()
+  const { fetchShopInfo, isLoading, shop, product } = useStoreProduct();
+  const [selectedLodging, setSelectedLodging] = useState("all");
+
+  useEffect(() => {
+    async function loadData() {
+      if (user?.user_id) {
+        await fetchAccommodationInfo(user.user_id);
+      }
+    }
+    loadData();
+  }, [user?.user_id, fetchAccommodationInfo]);
+
+  // Effet pour charger les données du shop quand accommodationInfo change
+  useEffect(() => {
+    if (accommodationInfo && accommodationInfo[0]) {
+      // Récupérer le shop associé au premier logement
+      fetchShopInfo(accommodationInfo[0].accommodation_id);
+    }
+  }, [accommodationInfo, fetchShopInfo]);
+
+
+// Récupérer l'ID du magasin
+  const shopId = shop.length > 0 ? shop[0].shop_id : 0;
 
   // Ajout des états pour la recherche et le filtre
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedLodging, setSelectedLodging] = useState("all")
 
-  // Exemple de données de logements
-  const lodgings = [
-    { id: "1", name: "Villa Méditerranée" },
-    { id: "2", name: "Chalet Alpin" },
-    { id: "3", name: "Appartement Paris" },
-  ]
+  const lodgingName = selectedLodging === 'all'
+    ? 'Tous les magasins'
+    : <ShopNameComponent shopId={parseInt(selectedLodging)} />;
+
+
 
   // Ajoutez ces états en haut de votre composant
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false)
@@ -106,11 +138,6 @@ export default function ShopManage() {
     ]
   }
 
-  if (isLoading) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <LoadingSpinner />
-    </div>
-  )
 
   const chartData = [
     { month: "Janvier", sales: 1200 },
@@ -135,11 +162,11 @@ export default function ShopManage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              <BreadcrumbLink className="text-md" href="/dashboard">Dashboard</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink className="text-xl">Boutique</BreadcrumbLink>
+              <BreadcrumbLink className="text-xl text-amber-500" href="/dashboard/ShopManage">Boutique</BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -161,21 +188,20 @@ export default function ShopManage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={selectedLodging} onValueChange={setSelectedLodging}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrer par logement" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les logements</SelectItem>
-                {lodgings.map((lodging) => (
-                  <SelectItem key={lodging.id} value={lodging.id}>
-                    {lodging.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+				className="px-4 py-2 border rounded-xl"
+				value={selectedLodging}
+				onChange={(e) => setSelectedLodging(e.target.value)}
+			>
+			<option value="all">Tous les magasins</option>
+				{Array.isArray(shop) &&
+					shop.map((shopItem) => (
+				<option key={shopItem.shop_id} value={shopItem.shop_id}>
+					{shopItem.name}
+				</option>
+			))}
+			</select>
           </div>
-
 				{/* Graphique des ventes */}
 				<Card className="col-span-2 hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -368,7 +394,9 @@ export default function ShopManage() {
           </div>
 
           <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-6">Produits du Shop // logement name</h2>
+            <h2 className="text-2xl font-semibold mb-6">
+              Produits du Shop - {lodgingName}
+            </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {/* Carte pour ajouter un nouveau produit */}
               <Card className="hover:shadow-lg transition-shadow duration-200 group">
@@ -435,8 +463,9 @@ export default function ShopManage() {
                                   <Image
                                     src={URL.createObjectURL(newProduct.image)}
                                     alt="Aperçu"
-                                    fill
-                                    className="object-cover rounded-md"
+                                    width={500}
+                                    height={300}
+                                    className="w-full h-40 object-cover rounded-md"
                                   />
                                   <Button
                                     size="icon"
@@ -493,9 +522,10 @@ export default function ShopManage() {
                     <div className="relative">
                       <div className="aspect-square relative">
                         <Image
-                          src={`/placeholder-product-${i}.jpg`}
+                          src="/images/default-product.jpg"
                           alt={`Produit ${i}`}
-                          fill
+                          width={500}
+                          height={300}
                           className="object-cover rounded-t-lg"
                         />
                       </div>
@@ -562,8 +592,9 @@ export default function ShopManage() {
                                       <Image
                                         src={URL.createObjectURL(editingProduct.image)}
                                         alt="Aperçu"
-                                        fill
-                                        className="object-cover rounded-md"
+                                        width={500}
+                                        height={300}
+                                        className="w-full h-40 object-cover rounded-md"
                                       />
                                       <Button
                                         size="icon"

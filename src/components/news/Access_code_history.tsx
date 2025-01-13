@@ -126,7 +126,7 @@ export default function AccessCodeHistory() {
                   <p><strong>Date de création:</strong> {format(selectedCode.createdAt, "dd/MM/yyyy")}</p>
                   <p><strong>Logement:</strong> {selectedCode.accommodation}</p>
                   <p><strong>Statut:</strong> {selectedCode.status}</p>
-                  <p><strong>Expire le:</strong> {format(selectedCode.expiresAt, "dd/MM/yyyy HH:mm")}</p>
+                  <p><strong>Expire le:</strong> {format(selectedCode.expiresAt, "dd/MM/yyyy")}</p>
                   <p><strong>Temps restant:</strong> {getRemainingTime(selectedCode.expiresAt)}</p>
                 </div>
               )}
