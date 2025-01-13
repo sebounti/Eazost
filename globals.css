@@ -1,0 +1,4 @@
+/* Exemple pour animation-timeline */
+-webkit-animation-timeline: auto;
+-moz-animation-timeline: auto;
+animation-timeline: auto;
