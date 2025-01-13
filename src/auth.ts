@@ -1,3 +1,17 @@
+declare module "next-auth" {
+    interface User {
+        account_type?: string;
+        stripe_customer_id?: string;
+    }
+}
+
+declare module "next-auth/jwt" {
+    interface JWT {
+        stripeCustomerId?: string;
+        role?: string;
+    }
+}
+
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db/db";
@@ -8,7 +22,7 @@ import FacebookProvider from "next-auth/providers/facebook";
 import { users, accounts, sessions, usersVerification } from "@/db/authSchema";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-02-15"
+    apiVersion: "2024-12-18.acacia"
 });
 
 export const { handlers: { GET, POST }, auth } = NextAuth({
@@ -65,13 +79,13 @@ export const { handlers: { GET, POST }, auth } = NextAuth({
 
                 if (existingUser.length > 0 && !existingUser[0].stripe_customer_id) {
                     const stripeCustomer = await stripe.customers.create({
-                        email: user.email,
-                        name: user.name || user.email,
+                        email: user.email || '',
+                        name: user.name || user.email || '',
                         metadata: {
-                            provider: account?.provider,
+                            provider: account?.provider || 'unknown',
                             accountType: user.account_type || "user"
                         }
-                    });
+                    } as Stripe.CustomerCreateParams);
 
                     await db
                         .update(users)
