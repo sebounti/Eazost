@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { product, shop } from '@/db/appSchema';
+import { product } from '@/db/appSchema';
 import { shopSchema } from '@/validation/shopSchema';
 import { productSchema } from '@/validation/productSchema';
 
@@ -51,7 +51,7 @@ interface shopStore {
 }
 
 // on crée le store
-export const useStoreProduct = create<shopStore>((set) => ({
+export const useProductStore = create<shopStore>((set) => ({
 	shop: [], // on initialise le shop
 	product: [], // on initialise le product
 	isLoading: false, // on initialise le loading

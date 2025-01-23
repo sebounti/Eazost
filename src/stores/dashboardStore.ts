@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { useAuthStore } from './authStore';
+import { getSession } from "next-auth/react";
 
+// on définit les types des données du dashboard
 interface Property {
   id: number;
   name: string;
@@ -11,6 +12,7 @@ interface Property {
   activeCodes: number;
 }
 
+// on définit les types des données des notifications
 interface Notification {
   id: number;
   message: string;
@@ -18,6 +20,7 @@ interface Notification {
   date: Date;
 }
 
+// on définit les types des données du store
 interface DashboardStore {
   properties: Property[];
   notifications: Notification[];
@@ -26,19 +29,21 @@ interface DashboardStore {
   fetchDashboardData: () => Promise<void>;
 }
 
+// on crée le store
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   properties: [],
   notifications: [],
   isLoading: false,
   error: null,
 
+  // on récupère les données du dashboard
   fetchDashboardData: async () => {
     set({ isLoading: true });
     try {
-      // Remplacez par votre appel API réel
+      const session = await getSession();
       const response = await fetch('/api/dashboard', {
         headers: {
-          'Authorization': `Bearer ${useAuthStore.getState().token}`
+          'Authorization': `Bearer ${session?.user?.id}`
         }
       });
 

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { stayInfo } from '@/db/appSchema';
+import { type stayInfo } from '@/db/appSchema';
 
 interface StayInfoStore {
 	stayInfo: typeof stayInfo.$inferSelect[];
@@ -8,7 +8,7 @@ interface StayInfoStore {
 	fetchStayInfos: (userId: string) => Promise<void>;
 	updateStayInfo: (id: number, data: Partial<typeof stayInfo.$inferSelect>) => Promise<void>;
 	deleteStayInfo: (id: number) => Promise<void>;
-	fetchStayInfosByLogementId: (logementId: number) => Promise<boolean>;
+	fetchStayInfosByLogementId: (logementId: number) => Promise<void>;
 	addStayInfo: (data: typeof stayInfo.$inferSelect) => Promise<void>;
 }
 
@@ -19,20 +19,23 @@ export const useStayInfoStore = create<StayInfoStore>((set) => ({
 
 	//fetch des cartes information
 	fetchStayInfos: async (userId: string) => {
-		set({ isLoading: true, error: null });
+		console.log('🔄 fetchStayInfos appelé avec userId:', userId);
 		try {
+			set({ isLoading: true, error: null });
 			const response = await fetch(`/api/stayInfo?userId=${userId}`);
-			if (!response.ok) {
-				throw new Error('Erreur lors du chargement des données');
-			}
+			console.log('📥 Réponse API:', response.status);
 			const data = await response.json();
-			set({ stayInfo: data.data, isLoading: false });
+			console.log('📦 Données reçues:', data);
+			set({ stayInfo: data, isLoading: false });
 		} catch (error) {
-			set({ error: 'Erreur lors du chargement des données', isLoading: false });
-			throw error;
+			console.error('❌ Erreur store:', error);
+			set({
+				error: 'Erreur lors du chargement',
+				isLoading: false,
+				stayInfo: []
+			});
 		}
 	},
-
 
 	//ajout de la carte information
 	addStayInfo: async (data: typeof stayInfo.$inferSelect) => {
@@ -92,16 +95,22 @@ export const useStayInfoStore = create<StayInfoStore>((set) => ({
 
 	//fetch des cartes information par logement
 	fetchStayInfosByLogementId: async (logementId: number) => {
-		set({ isLoading: true, error: null });
 		try {
+			set({ isLoading: true, error: null });
 			const response = await fetch(`/api/properties/stay-info/${logementId}`);
-			if (!response.ok) throw new Error('Erreur lors du chargement des données');
+
+			if (!response.ok) {
+				throw new Error('Erreur lors du chargement des données');
+			}
+
 			const data = await response.json();
 			set({ stayInfo: data, isLoading: false });
-			return true;
 		} catch (error) {
-			set({ error: 'Erreur lors du chargement des données', isLoading: false });
-			throw error;
+			set({
+				error: 'Erreur lors du chargement',
+				isLoading: false,
+				stayInfo: []
+			});
 		}
 	}
 }));

@@ -10,15 +10,21 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   loading: boolean;
   error: string | null;
+  isAuthenticated: boolean;
   initializeStore: () => Promise<void>;
+  setUser: (userData: User) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  token: null,
   loading: true,
   error: null,
+  isAuthenticated: false,
+  setUser: (userData) => set({ user: userData }),
   initializeStore: async () => {
     try {
       const response = await fetch('/api/auth/session');
