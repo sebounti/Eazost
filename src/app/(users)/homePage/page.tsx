@@ -3,8 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { MessageCircleIcon, ShoppingCartIcon, MapPinIcon, Info, UserIcon, ShoppingBag } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useTokens } from '@/hooks/useTokens';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { useTokens } from '@/hooks/auth/useTokens';
 import { TokenDebug } from '@/components/TokenDebug';
 
 const UserHomePage = () => {
