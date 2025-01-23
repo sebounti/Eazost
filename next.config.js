@@ -3,7 +3,9 @@ const nextConfig = {
   images: {
     domains: [
       'localhost',
-      'res.cloudinary.com'  // Pour les images Cloudinary
+      'res.cloudinary.com',
+      'example.com',
+      'picsum.photos'
     ],
     remotePatterns: [
       {
