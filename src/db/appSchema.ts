@@ -1,6 +1,6 @@
 import { mysqlTable, varchar, timestamp, int, boolean, decimal, date, text } from 'drizzle-orm/mysql-core';
-import { users } from './authSchema';
 import { relations } from 'drizzle-orm';
+import { users } from './authSchema';
 
 // Table "Users_info"
 export const usersInfo = mysqlTable('users_info', {

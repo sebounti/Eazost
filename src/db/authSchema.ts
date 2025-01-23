@@ -56,3 +56,13 @@ export const usersResetPassword = mysqlTable('users_resetpassword', {
 	updated_at: timestamp('updated_at').defaultNow().onUpdateNow(),
 	used: boolean('used').default(false),
 });
+
+// Ajouter l'export de usersSession
+export const usersSession = mysqlTable('users_session', {
+	users_id: varchar('users_id', { length: 255 }).notNull(),
+	token: varchar('token', { length: 255 }).notNull(),
+	uuid: varchar('uuid', { length: 36 }).notNull(),
+	expired_at: timestamp('expired_at').notNull(),
+	user_agent: varchar('user_agent', { length: 255 }),
+	ip_address: varchar('ip_address', { length: 45 })
+});
