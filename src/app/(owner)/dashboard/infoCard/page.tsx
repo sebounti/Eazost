@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { MdClose, MdAdd, MdEdit, MdCreditCard } from "react-icons/md";
+import { MdClose, } from "react-icons/md";
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import InfoCard from "@/components/card/InfoCard";
@@ -15,22 +14,13 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useSession } from "next-auth/react";
 import InfoCardForm from "@/components/card/forms/InfoCardForm";
-import OrderDialog from "@/components/card/dialogs/OrderDialog";
-import OrderCardForm from "@/components/card/forms/OrderCardForm";
 import { CARDINFORMATION_TYPES, InfoCardFormData } from "@/components/card/forms/InfoCardForm";
+import { useFilteredStayInfo } from "@/hook/useFilteredStayInfo";
 
-const apiService = {
-  fetchStayInfo: (userId: string) => fetch(`/api/stayInfo/${userId}`),
-  updateStayInfo: (id: number, data: FormData) => fetch(`/api/stayInfo/${id}`, {
-    method: 'PUT',
-    body: data
-  }),
-  // ... autres méthodes API
-};
 
 // Page pour la gestion des cartes d'information
 const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
-	const { user } = useAuthStore();
+	const { user, initializeStore } = useAuthStore();
 	const [selectedCard, setSelectedCard] = useState<number | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const {
@@ -46,18 +36,40 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	const [filterType, setFilterType] = useState<string>('all');
 	const [searchTerm, setSearchTerm] = useState<string>('');
 	const [selectedAccommodation, setSelectedAccommodation] = useState('all');
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// Ajout de l'initialisation du store
+	useEffect(() => {
+	  if (session?.user) {
+		initializeStore();
+	  }
+	}, [session, initializeStore]);
 
 	// Récupération des cartes d'information
 	useEffect(() => {
-	  if (user?.user_id) {
-		// Chargez les données en parallèle
-		Promise.all([
-		  fetchStayInfos(String(user.user_id)),
-		  fetchAccommodationInfo(user.user_id)
-		]);
-	  }
-	}, [user]);
+	  const loadData = async () => {
+		if (!user?.user_id) {
+		  console.log('❌ Pas de user_id');
+		  return;
+		}
+
+		try {
+		  console.log('🔄 Chargement des données pour userId:', user.user_id);
+		  await Promise.all([
+			fetchStayInfos(String(user.user_id)),
+			fetchAccommodationInfo(user.user_id)
+		  ]);
+		  console.log('✅ Données chargées');
+		} catch (error) {
+		  console.error('❌ Erreur chargement:', error);
+		  toast.error('Erreur lors de la récupération des données');
+		}
+	  };
+
+	  loadData();
+	}, [user?.user_id, fetchStayInfos, fetchAccommodationInfo]);
+
+
 
 	// Gestion des erreurs
 	useEffect(() => {
@@ -67,25 +79,13 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	}, [error]);
 
 
-	// Ajout du filtrage des cartes d'information
-	const filteredstayinfo = useMemo(() => {
-	  if (!stayInfo || !accommodation) return [];
-
-	  return (Array.isArray(stayInfo) ? stayInfo : []).filter((cardInfo) => {
-		// Trouve le logement correspondant
-		const relatedAccommodation = accommodation.find(
-		  acc => acc.accommodation_id === cardInfo.accommodation_id
-		);
-
-		const matchesType = filterType === 'all' || cardInfo.category === filterType;
-		const matchesSearch = cardInfo.title.toLowerCase().includes(searchTerm.toLowerCase());
-		const matchesAccommodation = selectedAccommodation === 'all' ||
-									relatedAccommodation?.accommodation_id === parseInt(selectedAccommodation);
-
-		return matchesType && matchesSearch && matchesAccommodation;
-	  });
-	}, [stayInfo, accommodation, filterType, searchTerm, selectedAccommodation]);
-
+	const filteredstayinfo = useFilteredStayInfo({
+		stayInfo: stayInfo || [],
+		accommodation: accommodation || [],
+		filterType,
+		searchTerm,
+		selectedAccommodation,
+	});
 
 
 
@@ -105,6 +105,7 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	  // Éviter le scroll en arrière-plan
 	  document.body.style.overflow = 'hidden';
 	}, []);
+
 
 
 	const onUpdateImage = async (stayInfoId: number, file: File) => {
@@ -136,12 +137,12 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 		  headers: { 'Content-Type': 'application/json' },
 		  body: JSON.stringify(data)
 		});
-
-		// Rafraîchir les données après la modification
-		if (user?.user_id) {
-		  await fetchStayInfos(String(user.user_id));
+		if ( !data.title || !data.category || !data.description || !data.accommodation_id) {
+			toast.error("Tous les champs sont obligatoires");
+			return;
 		}
 
+		await refreshData();
 		toast.success("Carte d'information mise à jour avec succès");
 	  } catch (error) {
 		toast.error("Erreur lors de la mise à jour de la carte");
@@ -150,6 +151,7 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 
 	// Ajout d'une carte d'information
 	const handleAddInfoCard = async (logementId: number, data: InfoCardFormData) => {
+		setIsSubmitting(true);
 	  try {
 		console.log("Tentative création carte:", { logementId, data });
 
@@ -194,11 +196,17 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 		console.error('Erreur création détaillée:', error);
 		toast.error('Erreur lors de la création');
 		throw error;
+	  } finally {
+		setIsSubmitting(false);
 	  }
 	};
 
+
 	// Suppression d'une carte d'information
 	const onDeleteInfoCard = async (cardId: number) => {
+		const confirmDelete = window.confirm("voulez-vous supprimer cette carte ?")
+		if(!confirmDelete) return;
+
 	  try {
 		await fetch(`/api/stayInfo/${cardId}`, {
 		  method: 'DELETE'
@@ -300,7 +308,6 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 
 
 			  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-
 				{/* Liste des cartes d'information filtrées */}
 				{filteredstayinfo.map((cardInfo) => (
 				  <InfoCard

@@ -16,28 +16,7 @@ import { useStayInfoStore } from "@/stores/useStayInfoStore";
 import { Accommodation, Product } from "@/types";
 
 
-// Ajout de la fonction pour upload sur Cloudinary
-const uploadImageToCloudinary = async (file: File) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'properties');
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
-
-    const data = await response.json();
-    return data.secure_url;
-  } catch (error) {
-    console.error('Erreur upload Cloudinary:', error);
-    throw error;
-  }
-};
 
 // Page pour la gestion des logements
 const LogementsPage = memo(function LogementsPage() {
@@ -299,6 +278,7 @@ const LogementsPage = memo(function LogementsPage() {
       toast.error("Erreur lors de la modification de la commande");
     }
   };
+
 
   if (authLoading) return <LoadingSpinner />;
   if (!user) {

@@ -5,8 +5,6 @@ import { Package, ShoppingCart, TrendingUp, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart } from "@tremor/react"
-import Link from 'next/link'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -38,13 +36,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useAccommodationStore } from "@/stores/accommodationStore"
-import { shop as shopSchema } from "@/db/appSchema"
 import { useAuthStore } from "@/stores/authStore"
-import { useStoreProduct } from "@/stores/StoreProduct"
+import { useProductStore } from "@/stores/useProductStore"
 
 // Définir le composant avant son utilisation
 const ShopNameComponent = ({ shopId }: { shopId: number }) => {
-  const { shop, fetchShopInfo } = useStoreProduct();
+  const { shop, fetchShopInfo } = useProductStore();
 
   useEffect(() => {
     fetchShopInfo(shopId);
@@ -59,7 +56,7 @@ const ShopNameComponent = ({ shopId }: { shopId: number }) => {
 export default function ShopManage() {
   const { user } = useAuthStore()
   const { accommodationInfo, fetchAccommodationInfo } = useAccommodationStore()
-  const { fetchShopInfo, isLoading, shop, product } = useStoreProduct();
+  const { fetchShopInfo, isLoading, shop, product } = useProductStore();
   const [selectedLodging, setSelectedLodging] = useState("all");
 
   useEffect(() => {
@@ -80,7 +77,7 @@ export default function ShopManage() {
   }, [accommodationInfo, fetchShopInfo]);
 
 
-// Récupérer l'ID du magasin
+	// Récupérer l'ID du magasin
   const shopId = shop.length > 0 ? shop[0].shop_id : 0;
 
   // Ajout des états pour la recherche et le filtre
