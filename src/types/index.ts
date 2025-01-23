@@ -29,11 +29,13 @@ export type Accommodation = {
 };
 
 export interface InfoCard {
-  id?: number;
+  stay_info_id: number;
   title: string;
-  type: string;
-  content: string;
-  imageUrl?: string;
+  category: string;
+  description: string;
+  accommodation_id: number;
+  photo_url?: string;
+  // Ajoutez d'autres propriétés si nécessaire
 }
 
 export interface stayInfo {
