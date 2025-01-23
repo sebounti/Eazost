@@ -2,6 +2,10 @@ import { db } from "@/db/db";
 import { accessCode } from "@/db/appSchema";
 import { v4 as uuidv4 } from 'uuid';
 
+//----- generateAccessCode -----//
+// générer un code d'accès pour un logement //
+
+
 export const generateAccessCode = async (userId: string, accommodationId: number, validityDays: number) => {
 	const uuid = uuidv4();
 	const code = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);

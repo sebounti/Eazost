@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { LRUCache } from 'lru-cache';
 
+//----- rateLimiter -----//
+// limiter le nombre de requêtes par IP ou utilisateur //
+
 // Configuration du cache pour stocker les requêtes
 const rateLimit = new LRUCache<string, number>({
   max: 500, // Le nombre maximum d'IP ou d'utilisateurs qu'on peut suivre

@@ -1,4 +1,5 @@
-// utils/socialAuth.ts
+//----- socialAuth -----//
+// gérer la connexion avec Google et Facebook //
 
 import { signIn } from 'next-auth/react';
 

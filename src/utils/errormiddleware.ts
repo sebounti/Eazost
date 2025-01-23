@@ -1,3 +1,6 @@
+//----- errorMiddleware -----//
+// middleware pour gérer les erreurs //
+
 export const errorMiddleware = (handler: Function) => {
 	return async (req: Request, res?: Response) => {
 	  try {
@@ -15,4 +18,3 @@ export const errorMiddleware = (handler: Function) => {
 	  }
 	};
   };
-  

@@ -1,6 +1,5 @@
-
-
-
+//----- uploadFile -----//
+// uploader un fichier sur le serveur //
 
 export const uploadFileToServer = async (file: File): Promise<string | null> => {
 	const fileToBase64 = (file: File): Promise<string> => {

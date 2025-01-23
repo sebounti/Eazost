@@ -2,6 +2,9 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
+//----- sendVerificationEmail -----//
+// envoyer un email de vérification //
+
 // Configuration de dotenv
 dotenv.config();
 
