@@ -5,7 +5,6 @@ import '@/app/globals.css';
 import { Toaster } from 'sonner';
 import { Poppins, Nunito } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
-import { headers } from 'next/headers';
 
 const poppins = Poppins({
 	subsets: ['latin'],
