@@ -16,6 +16,9 @@ import {
 } from "./types";
 import { isClassedComponent, COMPONENT_SYMBOL } from "./unique";
 
+//----- classed -----//
+// classed est une bibliothèque pour générer des classes CSS en fonction des props //
+
 type ClassedConfig = {
   merger?: (...args: string[]) => any;
 };

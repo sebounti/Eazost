@@ -1,5 +1,8 @@
-import db from '@/db/db'; // Assure-toi d'importer correctement ta configuration Drizzle
-import { usersSession } from '@/db/appSchema'; // Assure-toi d'importer ta table de sessions
+import {db} from '@/db/db';
+import { usersSession } from '@/db/authSchema';
+
+//----- sessionService -----//
+// Service pour les sessions //
 
 export const insertSession = async (userId: number, token: string, ipAddress: string, userAgent: string) => {
     const expiredAt = new Date(Date.now() + 60 * 60 * 1000); // Exemple : 1 heure d'expiration
@@ -7,7 +10,8 @@ export const insertSession = async (userId: number, token: string, ipAddress: st
     try {
         // Insérer la nouvelle session dans la base de données
         const result = await db.insert(usersSession).values({
-            users_id: userId,
+            users_id: userId.toString(),
+            uuid: crypto.randomUUID(),
             token: token,
             ip_address: ipAddress,
             user_agent: userAgent,

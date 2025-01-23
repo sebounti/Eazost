@@ -1,5 +1,9 @@
 // Source: https://github.com/joe-bell/cva
 
+//----- cva -----//
+// CVA pour les classes CSS //
+// cva est une bibliothèque pour générer des classes CSS en fonction des props //
+
 import type * as CLSX from "./clsx";
 import { clsx } from "./clsx";
 
@@ -124,4 +128,3 @@ export const cva =
       props?.className,
     );
   };
-

@@ -1,3 +1,6 @@
+//----- classNames -----//
+// classNames est une bibliothèque pour générer des classes CSS en fonction des props //
+
 export const cx = (classNames: string[]) => classNames.filter(Boolean).join(" ");
 
 export const cn = (...classes: string[]) => cx(classes);

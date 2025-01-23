@@ -1,3 +1,5 @@
+//----- polymorphic -----//
+// polymorphic est une bibliothèque pour générer des composants polymorphes //
 
 import type * as React from "react";
 

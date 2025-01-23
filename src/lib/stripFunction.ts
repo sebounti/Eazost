@@ -1,6 +1,10 @@
 import { stripe } from "@/lib/stripe";
 
 
+//----- stripe -----//
+// Stripe pour les paiements //
+
+
 // Fonction pour créer un Payment Intent
 export async function createPaymentIntent(amount: number, currency: string) {
 	const paymentIntent = await stripe.paymentIntents.create({

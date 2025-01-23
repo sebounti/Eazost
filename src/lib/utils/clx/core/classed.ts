@@ -10,6 +10,9 @@ import { mapPropsToVariantClass, parseClassNames } from "./parser";
 import { cn } from "./classNames";
 import { TW_VARS } from "./constants";
 
+//----- core -----//
+// core est une bibliothèque pour générer des classes CSS en fonction des props //
+
 export interface ClassedCoreConfig {
   merger?: (...args: string[]) => any;
 }

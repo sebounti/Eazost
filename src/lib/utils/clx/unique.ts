@@ -1,5 +1,8 @@
 import { ClassedComponentType } from "./types";
 
+//----- unique -----//
+// unique est une bibliothèque pour générer des composants uniques //
+
 export const COMPONENT_SYMBOL: unique symbol = Symbol.for("tw-classed.component");
 
 export const isClassedComponent = (

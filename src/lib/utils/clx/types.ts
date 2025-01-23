@@ -8,6 +8,9 @@ import type {
 } from "./core";
 import * as Util from "./core/util";
 
+//----- types -----//
+// types est une bibliothèque pour générer des types en fonction des props //
+
 export { InferVariantProps, Variants, VariantConfig };
 
 interface InferableClassedType {

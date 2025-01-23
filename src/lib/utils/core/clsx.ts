@@ -1,3 +1,5 @@
+//----- clsx -----//
+// clsx est une bibliothèque pour générer des classes CSS en fonction des props //
 
 type TODO = any;
 
