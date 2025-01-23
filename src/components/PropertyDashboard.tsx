@@ -32,7 +32,7 @@ export default function PropertyDashboard() {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
+    <div className="bg-white grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
       {cards.map((card, index) => (
         <div key={index} className="p-4">
 		 <Link href={card.link}>

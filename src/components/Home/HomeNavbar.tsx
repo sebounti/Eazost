@@ -38,20 +38,20 @@ export default function HomeNavbar({ isBlurred }: { isBlurred: boolean }) {
             </button>
             {/* Menu pour petits écrans */}
 			<div className={`${isOpen ? 'fixed top-0 left-0 w-full h-full bg-black flex flex-col items-center justify-center' : 'hidden'} md:flex flex-col md:flex-row md:items-center`}>
-				<a href="#" className="text-xl tracking-wide text-slate-800 mr-7">Accueil</a>
+				<Link href="/home" className="text-xl tracking-wide text-slate-800 mr-7">Accueil</Link>
 			<button onClick={toggleMenu} className="absolute text-white top-4 right-4 md:hidden">
         		<svg className="w-8 h-8 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
             		<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         		</svg>
     		</button>
-				<a href="#" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">Fonctionnalité</a>
-                <a href="#" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">Tarif</a>
+				<Link href="#features" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">Fonctionnalité</Link>
+                <Link href="#pricing" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">Tarif</Link>
 				<Link href="/registration">
 				<button className="font-sans tracking-wide rounded-xl bg-amber-700  text-white mr-7 md:p-3 hover:bg-amber-500 animate-pulse animate-infinite animate-duration-[3000ms]">
                 Sign up
             	</button>
 				</Link>
-				<Link href="/contact" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">
+				<Link href="#newsletter" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">
   				Contact
 				</Link>
             </div>

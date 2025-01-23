@@ -1,9 +1,16 @@
-// components/dialogs/LogementDialog.tsx
+//--- Composant LogementDialog ---
+//--- Composant pour la gestion des logements ---//
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import LogementForm from "../forms/LogementForm";
-import { Accommodation } from "@/types";
+"use client";
+// React imports
 import { useState } from 'react';
+// UI Components
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+// Custom Components
+import LogementForm from "../forms/LogementForm";
+// Types
+import { Accommodation } from "@/types";
+
 
 type LogementDialogProps = {
   logement?: Accommodation;

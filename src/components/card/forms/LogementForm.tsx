@@ -1,19 +1,45 @@
-// components/forms/LogementForm.tsx
+//--- Composant LogementForm ---
+//--- Composant pour la gestion des logements ---//
 
 "use client";
 
+// React et types
 import { useState } from 'react';
+import { z } from "zod";
 import { Accommodation } from "@/types";
+
+// Composants Next.js
+import Image from "next/image";
+
+// Composants UI
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import Image from "next/image";
+
+// Composants personnalisés
 import CloudinaryFileUploader from "@/components/upload/CloudinaryFileUploder";
+
+// Stores
 import { useAccommodationStore } from "@/stores/accommodationStore";
 
-// Props avec types stricts
+
+
+// Schéma de validation des données du formulaire
+export const logementSchema = z.object({
+	accommodation_id: z.number(),
+	name: z.string().min(1, "Le nom est requis"),
+	address_line1: z.string().min(1, "L'adresse est requise"),
+	address_line2: z.string().optional(),
+	city: z.string().min(1, "La ville est requise"),
+	zipcode: z.string().min(1, "Le code postal est requis"),
+	country: z.string().min(1, "Le pays est requis"),
+	description: z.string().min(10, "La description doit faire au moins 10 caractères"),
+	photo_url: z.string().url().optional(),
+});
+
+//--- Props avec types stricts ---//
 interface LogementFormProps {
   logement?: Accommodation;
   onSubmit: (formData: FormData) => Promise<void>;
@@ -21,7 +47,7 @@ interface LogementFormProps {
   onCancel: () => void;
 }
 
-
+//--- Composant LogementForm ---//
 const LogementForm = ({ logement, onSubmit, onDelete, onCancel }: LogementFormProps) => {
   const [imageUrl, setImageUrl] = useState(logement?.photo_url || '');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -45,6 +71,7 @@ const LogementForm = ({ logement, onSubmit, onDelete, onCancel }: LogementFormPr
     setImageUrl(url);
   };
 
+  // Gestion de la suppression du logement
   const handleDelete = async () => {
     if (!logement || !onDelete) return;
 

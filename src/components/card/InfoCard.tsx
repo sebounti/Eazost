@@ -1,10 +1,14 @@
-// components/LogementCard.tsx
+//--- Composant InfoCard ---
+//--- Composant pour la gestion des informations ---//
 
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import Image from "next/image";
-import { useStayInfoStore } from "@/stores/useStayInfoStore";
+// React imports
 import { useEffect, useState } from "react";
-import { MdEdit, MdDelete,  } from "react-icons/md";
+import Image from "next/image";
+// Third party imports
+import { FocusScope } from '@radix-ui/react-focus-scope';
+import { MdEdit, MdDelete } from "react-icons/md";
+// UI Components
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -16,12 +20,14 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { stayInfo } from "@/db/appSchema";
-import type { InfoCardData } from "./forms/InfoCardForm";  // Importez le type depuis InfoCardForm
-import { FocusScope } from '@radix-ui/react-focus-scope';
+// Custom Components
 import InfoCardDialog from "./dialogs/InfoCardDialog";
+// Types
+import { stayInfo } from "@/db/appSchema";
+import type { InfoCardData } from "./forms/InfoCardForm";
 import { InfoCardFormData } from "./forms/InfoCardForm";
-
+// Stores
+import { useStayInfoStore } from "@/stores/useStayInfoStore";
 
 
 // Props pour le composant LogementCard
@@ -145,9 +151,8 @@ const InfoCard = ({ cardInfo, onUpdateImage, onEditInfoCard, onAddInfoCard, onDe
           </div>
 
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-            <DialogContent>
-              <DialogTitle>{cardInfo.title}</DialogTitle>
-              <DialogDescription>{cardInfo.description}</DialogDescription>
+            <DialogContent className="bg-white rounded-lg">
+              <DialogTitle className="text-2xl font-bold text-center text-gray-900 ">{cardInfo.title}</DialogTitle>
               <div className="space-y-6 flex flex-col items-center">
                 <div className="flex justify-between w-full">
                 </div>
@@ -159,7 +164,7 @@ const InfoCard = ({ cardInfo, onUpdateImage, onEditInfoCard, onAddInfoCard, onDe
                   className="rounded"
                 />
                 <p className="text-2xl text-gray-500">{cardInfo.category}</p>
-                <p className="text-base italic text-gray-400 justify-center">{cardInfo.description}</p>
+                <p className="text-base text-gray-400 justify-center">{cardInfo.description}</p>
               </div>
             </DialogContent>
           </Dialog>

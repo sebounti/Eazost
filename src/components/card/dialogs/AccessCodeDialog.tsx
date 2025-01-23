@@ -1,8 +1,15 @@
+//--- Composant AccessCodeDialog ---
+//--- Composant pour la gestion des codes d'accès ---//
+
 "use client";
 
+// UI Components
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+// Custom Components
 import AccessCodeForm from "@/components/card/forms/AcessCodeForm";
+// Types
 import { useState } from "react";
+
 
 type AccessCodeDialogProps = {
   onSubmit: (data: any) => void;

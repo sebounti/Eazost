@@ -1,13 +1,41 @@
+//--- Composant ProductForm ---
+//--- Composant pour la gestion des produits ---//
+
+// React imports
+import { ChangeEvent, useState } from "react";
+
+// Next.js imports
+import Image from "next/image";
+
+// Third party imports
+import { z } from "zod";
+import { toast } from "sonner";
+
+// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Product } from "@/types/index";
-import { ChangeEvent } from "react";
-import Image from "next/image";
-import { toast } from "sonner";
-import { useState } from "react";
+
+// Custom components
 import CloudinaryFileUploader from "@/components/upload/CloudinaryFileUploder";
 
+// Types
+import { Product } from "@/types/index";
+
+
+
+
+// Schéma de validation des données du formulaire
+export const productSchema = z.object({
+	product_id: z.number(),
+	name: z.string().min(1, "Le nom du produit est requis"),
+	price: z.number().min(0, "Le prix doit être supérieur à 0"),
+	stock: z.number().min(0, "Le stock doit être supérieur à 0"),
+	description: z.string().min(10, "La description doit faire au moins 10 caractères"),
+	image_url: z.string().url().optional()
+});
+
+// Props avec types stricts
 type ProductFormProps = {
   product: Product;
   onChange: (updatedProduct: Product) => void;
@@ -17,7 +45,6 @@ type ProductFormProps = {
 
 const ProductForm = ({ product, onChange, onSubmit, onDelete }: ProductFormProps) => {
   const [imageUrl, setImageUrl] = useState(product?.image_url || '');
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleChange = (field: keyof Product, value: any) => {
     onChange({ ...product, [field]: value });
@@ -34,14 +61,11 @@ const ProductForm = ({ product, onChange, onSubmit, onDelete }: ProductFormProps
   const handleDelete = async () => {
     if (!product || !onDelete) return;
     try {
-      setIsDeleting(true);
       await onDelete(product.product_id);
       toast.success("Le produit a été supprimé avec succès");
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       toast.error("Impossible de supprimer le produit");
-    } finally {
-      setIsDeleting(false);
     }
   };
 

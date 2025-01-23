@@ -1,7 +1,16 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import ProductForm from "../forms/ProductForm";
-import { Product } from "@/types/index";
+//--- Composant ProductDialog ---//
+//--- Composant pour la gestion des produits ---//
+
+
+
+// React imports
 import { useState } from "react";
+// UI Components
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+// Custom Components
+import ProductForm from "../forms/ProductForm";
+// Types
+import { Product } from "@/types/index";
 
 
 

@@ -1,8 +1,16 @@
+//--- Composant AccessCodeCard ---
+//--- Composant pour la gestion des codes d'accès ---//
+
 "use client";
 
+// React imports
 import { useState } from "react";
+// UI Components
 import { toast } from "@/components/ui/use-toast";
+// Custom Components
 import AccessCodeDialog from "./dialogs/AccessCodeDialog";
+// Types
+
 
 type AccessCodeCardProps = {
   onGenerateCode: (data: any) => void;

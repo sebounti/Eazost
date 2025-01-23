@@ -70,7 +70,7 @@ export default function Footer({ }: FooterProps) {
 	  </div>
 
 	  <div className="max-w-7xl mx-auto border-t border-gray-200 py-2 px-4 flex flex-col items-center md:flex-row md:py-5 md:justify-between">
-		<p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">&copy; EaZost, All rights reserved</p>
+		<p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">&copy; 2025 EaZost, All rights reserved</p>
 	  </div>
 
 	</footer>

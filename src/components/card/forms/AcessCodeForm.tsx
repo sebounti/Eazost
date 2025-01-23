@@ -1,14 +1,32 @@
+//--- Composant AccessCodeForm ---
+//--- Composant pour la gestion des codes d'accès ---//
+
 "use client";
 
+// React imports
 import { useState, useEffect, useCallback } from "react";
+
+// UI Components
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+
+// Stores
 import { useAccommodationStore } from "@/stores/accommodationStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useSession } from "next-auth/react";
 import { ShadcnDatePicker } from "@/components/ui/date-picker";
+import { z } from "zod";
 
+
+// Schéma de validation des données du formulaire
+export const accessCodeSchema = z.object({
+	accommodation_id: z.number(),
+	contact_method: z.enum(["email", "phone"]),
+	contact: z.string().email("L'adresse e-mail est invalide").or(z.string().regex(/^\+\d{1,3}\s\d{1,4}\s\d{1,4}\s\d{1,4}\s\d{1,4}$/, "Le numéro de téléphone est invalide")),
+	start_date: z.date(),
+	end_date: z.date()
+});
 
 type AccessCodeFormProps = {
   onSubmit: (data: any) => void;

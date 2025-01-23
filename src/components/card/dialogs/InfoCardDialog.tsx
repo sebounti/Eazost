@@ -1,13 +1,19 @@
-// components/dialogs/InfoCardDialog.tsx
+//--- Composant InfoCardDialog ---
+//--- Composant pour la gestion des cartes d'informations ---//
 
-import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import InfoCardForm, { InfoCardFormData } from "../forms/InfoCardForm";
+"use client";
+
+// React imports
 import { useState, useCallback, useEffect } from "react";
+// UI Components
+import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+// Custom Components
+import InfoCardForm, { InfoCardFormData } from "../forms/InfoCardForm";
+// Types
 import { stayInfo } from "@/db/appSchema";
-import { useAuthStore } from "@/stores/authStore";
 import * as Dialog from '@radix-ui/react-dialog'
-import { useSession } from "next-auth/react";
+
 
 // Types
 type InfoCardDialogProps = {
@@ -31,8 +37,6 @@ export default function InfoCardDialog({
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [open, setOpen] = useState(false);
-	const { user } = useAuthStore();
-	const { data: session } = useSession();
 	const [formData, setFormData] = useState(cardInfo);
 	const [isEditing, setIsEditing] = useState(false);
 

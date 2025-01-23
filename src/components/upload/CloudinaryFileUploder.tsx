@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { IoImageOutline } from "react-icons/io5";
 
@@ -11,7 +11,7 @@ interface CloudinaryFileUploaderProps {
 
 const CloudinaryFileUploader = ({ uploadPreset, onUploadSuccess, disabled = false }: CloudinaryFileUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  
+
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

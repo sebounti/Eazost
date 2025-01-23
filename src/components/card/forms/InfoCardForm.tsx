@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { stayInfo } from '@/db/appSchema';
 import { useSession } from "next-auth/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 // Types constants
 export const CARDINFORMATION_TYPES = [
@@ -28,12 +30,12 @@ export const CARDINFORMATION_TYPES = [
 ] as const;
 
 // Schéma de validation
-export const formSchema = z.object({
+const infoCardSchema = z.object({
 	accommodation_id: z.number(),
 	stay_info_id: z.number().optional(), // Corrigé de stayInfo_id à stay_info_id pour correspondre au schéma de la base de données
-	title: z.string().min(1, "Le titre est requis"),
+	title: z.string().min(3, "Le titre doit contenir au moins 3 caractères"),
 	category: z.enum(CARDINFORMATION_TYPES),
-	description: z.string().min(10, "La description doit faire au moins 10 caractères"),
+	description: z.string().min(10, "La description doit être plus détaillée"),
 	photo_url: z.string().url().optional(),
 	users_id: z.string().optional(), // Ajouté users_id qui est présent dans le schéma de la base de données
 	created_at: z.date().optional(), // Ajouté created_at qui est présent dans le schéma
@@ -41,7 +43,7 @@ export const formSchema = z.object({
 });
 
 // Types dérivés du schéma
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof infoCardSchema>;
 type CardType = typeof CARDINFORMATION_TYPES[number];
 
 
@@ -102,6 +104,10 @@ const InfoCardForm = ({
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 	const [validationErrors, setValidationErrors] = useState<z.ZodError | null>(null);
 
+	const form = useForm({
+		resolver: zodResolver(infoCardSchema)
+	});
+
 	// Gestion de l'upload d'image
 	const handleImageUpload = async (url: string) => {
 		setIsUploading(true);
@@ -145,12 +151,18 @@ const InfoCardForm = ({
 				photo_url: imageUrl || null
 			};
 
+			// Validation des données avant soumission
+			const validationResult = infoCardSchema.safeParse(data);
+			if (!validationResult.success) {
+				setValidationErrors(validationResult.error);
+				toast.error("Erreur de validation des données");
+				return;
+			}
+
 			console.log("Form: Données à envoyer:", data);
 			await onSubmit(data);
-			toast.success('Formulaire soumis avec succès');
 		} catch (error) {
 			console.error('Form: Erreur soumission:', error);
-			toast.error("Erreur lors de la soumission");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -292,7 +304,9 @@ const InfoCardForm = ({
 					aria-invalid={validationErrors?.errors.some(e => e.path[0] === 'description')}
 				/>
 				{validationErrors?.errors.some(e => e.path[0] === 'description') && (
-					<p className="text-red-500 text-sm">La description doit faire au moins 10 caractères</p>
+					<p className="text-red-500 text-sm">
+						{validationErrors.errors.find(e => e.path[0] === 'description')?.message}
+					</p>
 				)}
 			</div>
 

@@ -1,5 +1,10 @@
-// components/LogementCard.tsx
+//--- Composant LogementCard ---
+//--- Composant pour la gestion des logements ---//
 
+// React imports
+import { useState, useEffect } from "react";
+import Image from "next/image";
+// UI Components
 import {
   Dialog,
   DialogTrigger,
@@ -9,24 +14,28 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Accommodation } from "@/types";
+// Custom Components
 import ProductDialog from "./dialogs/ProductDialog";
 import AccessCodeDialog from "./dialogs/AccessCodeDialog";
 import OrderDialog from "@/components/card/dialogs/OrderDialog";
-import Image from "next/image";
-import { useAccommodationStore } from "@/stores/accommodationStore";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+// Icons
 import { MdEdit, MdAdd, MdCreditCard, MdShoppingCart, MdKey, MdShoppingBag } from "react-icons/md";
 import { IoDocumentText } from "react-icons/io5";
 import { Loader2 } from "lucide-react";
+// Types
+import { Accommodation, Product } from "@/types";
 import { type InfoCardFormData, CARDINFORMATION_TYPES } from "./forms/InfoCardForm";
+// Stores
+import { useAccommodationStore } from "@/stores/accommodationStore";
 import { useStayInfoStore } from "@/stores/useStayInfoStore";
-import { Product } from "@/types/index";
+// Utils
+import { toast } from "sonner";
 
-// Importez uniquement les composants de dialogue qui existent
+
+// Custom Components
 import LogementDialog from "./dialogs/LogementDialog";
 import InfoCardDialog from "./dialogs/InfoCardDialog";
+import { useOrderStore } from "@/stores/useOrderStore";
 
 // Props interface
 interface LogementCardProps {
@@ -53,7 +62,7 @@ export default function LogementCard({
 }: LogementCardProps) {
   const { stayInfo, fetchStayInfosByLogementId } = useStayInfoStore();
   const { deleteAccommodation, updateAccommodation } = useAccommodationStore();
-
+  const { fetchOrders } = useOrderStore();
 
   // LogementCard - Données initiales
   useEffect(() => {
@@ -109,9 +118,18 @@ export default function LogementCard({
     }
   };
 
-
+  // Fonction pour générer un code d'accès
   const handleGenerateCode = (data: any) => {
     console.log("Code généré :", data);
+  };
+
+  // Fonction pour soumettre une commande
+  const onSubmitOrder = async (data: any) => {
+    try {
+      await fetchOrders(logement.accommodation_id);
+    } catch (error) {
+      toast.error("Erreur lors de la lecture des commandes");
+    }
   };
 
   return (
@@ -248,10 +266,13 @@ export default function LogementCard({
             <OrderDialog
               logementNom={logement.name}
               products={logement.products}
+              onSubmit={onSubmitOrder}
+              children={
+                <button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
+                  <MdShoppingBag className="text-xl" /> Commandes
+                </button>
+              }
             >
-              <button className="bg-amber-200 border border-slate-300 rounded-xl w-full px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-slate-50 flex items-center justify-center gap-2">
-                <MdShoppingBag className="text-xl" /> Commandes
-              </button>
             </OrderDialog>
           </div>
         </div>
