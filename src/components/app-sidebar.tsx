@@ -18,7 +18,6 @@ import { useSession } from "next-auth/react"
 
 // Stores
 import { useUserinfoStore } from "@/stores/userinfoStore"
-import { useAuthStore, type AuthState } from "@/stores/authStore"
 
 // Components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

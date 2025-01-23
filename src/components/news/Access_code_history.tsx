@@ -28,8 +28,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+
+
+type AccessCode = {
+  id: number;
+  createdAt: Date;
+  accommodation: string;
+  status: string;
+  code: string;
+  expiresAt: Date;
+}
+
+
 // Mock data for demonstration
-const initialCodes = [
+const initialCodes: AccessCode[] = [
   { id: 1, createdAt: new Date("2023-05-01"), accommodation: "Appartement 1", status: "Actif", code: "ABC123", expiresAt: new Date("2023-07-01") },
   { id: 2, createdAt: new Date("2023-05-15"), accommodation: "Maison 1", status: "Expiré", code: "DEF456", expiresAt: new Date("2023-06-15") },
   { id: 3, createdAt: new Date("2023-06-01"), accommodation: "Villa 1", status: "Actif", code: "GHI789", expiresAt: new Date("2023-08-01") },
@@ -37,14 +49,14 @@ const initialCodes = [
 
 export default function AccessCodeHistory() {
   const [codes, setCodes] = useState(initialCodes)
-  const [selectedCode, setSelectedCode] = useState(null)
+  const [selectedCode, setSelectedCode] = useState<AccessCode | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const removeCode = (id: number) => {
     setCodes(codes.filter(code => code.id !== id))
   }
 
-  const viewCodeDetails = (code: any) => {
+  const viewCodeDetails = (code: AccessCode) => {
     setSelectedCode(code)
     setIsDialogOpen(true)
   }
