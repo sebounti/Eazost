@@ -1,5 +1,8 @@
 import * as React from "react"
 
+//----- useIsMobile -----//
+// Hook pour vérifier si la fenêtre est en mode mobile //
+
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {

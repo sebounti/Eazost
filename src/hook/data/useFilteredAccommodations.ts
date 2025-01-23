@@ -1,5 +1,8 @@
 import { Accommodation } from "@/types";
 
+//----- useFilteredAccommodations -----//
+// Hook pour filtrer les logements en fonction du terme de recherche et du type de logement //
+
 export function useFilteredAccommodations(
   accommodations: Accommodation[],
   searchTerm: string,

@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { stayInfo, Accommodation } from "@/types";
 
+//----- useFilteredStayInfo -----//
+// Hook pour filtrer les informations de séjour en fonction du terme de recherche et du type de logement //
+
 interface UseFilteredStayInfoParams {
   stayInfo: stayInfo[];
   accommodation: Accommodation[];
