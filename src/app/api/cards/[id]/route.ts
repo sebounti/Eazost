@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { eq } from 'drizzle-orm';  // Drizzle ORM pour la requête conditionnelle
-import db from '@/db/db';  // Instance de ta base de données
+import {db} from '@/db/db';  // Instance de ta base de données
 import { stayInfo } from '@/db/appSchema';  // Schéma de ta table dans la base de données
 import { CardSchema } from '@/validation/CardSchema';  // Schéma de validation Zod
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
 const secretKey = process.env.JWT_SECRET as string;
 
+//----- GET USER FROM TOKEN -----//
+// Permet de récupérer l'utilisateur à partir du token //
+
+//----- GET -----//
+// Route pour récupérer l'utilisateur à partir du token //
 async function getUserFromToken(req: Request) {
   const cookieHeader = req.headers.get('cookie');
 
@@ -41,7 +45,8 @@ async function getUserFromToken(req: Request) {
   }
 }
 
-// Gérer la requête GET pour récupérer une carte spécifique par ID
+//----- GET -----//
+// Route pour récupérer une carte spécifique par ID
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
 
@@ -62,7 +67,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-// Gérer la requête PUT pour mettre à jour une carte
+//----- PUT -----//
+// Route pour mettre à jour une carte //
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
 
@@ -97,7 +103,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-// Gérer la requête DELETE pour supprimer une carte
+//----- DELETE -----//
+// Route pour supprimer une carte //
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
 

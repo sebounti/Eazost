@@ -4,9 +4,11 @@ import { stayInfo } from "@/db/appSchema";
 import { eq } from "drizzle-orm";
 import { pool } from "@/db/db";
 
+//----- route stay-info -----//
+// route pour les informations de séjour //
 
-// Gestion de toutes les requêtes pour /api/infoCard/[id]
-// GET pour récupérer une info card
+//----- GET -----//
+// Route pour récupérer une info card //
 export async function GET(request: Request, { params }: { params: { id: string } }) {
 	const connection = await pool.getConnection();
 	try {
@@ -22,7 +24,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 
-// PUT pour mettre à jour une info card
+//----- PUT -----//
+// Route pour mettre à jour une info card //
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
 	const connection = await pool.getConnection();
 	try {
@@ -36,7 +39,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 
-// DELETE pour supprimer une info card
+//----- DELETE -----//
+// Route pour supprimer une info card //
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
 	const connection = await pool.getConnection();
 	try {

@@ -4,6 +4,12 @@ import { users } from '@/db/authSchema';
 import { eq } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 
+//----- VALIDATION EMAIL -----//
+// Permet de vérifier si l'email est valide //
+
+
+//----- GET -----//
+// Route pour vérifier si l'email est valide //
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

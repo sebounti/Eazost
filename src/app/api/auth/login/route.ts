@@ -1,17 +1,20 @@
-import { generateAccessToken, generateRefreshToken, getUserFromToken } from '@/app/api/services/allTokenService';
-import db from '@/db/db';
+import { generateAccessToken, generateRefreshToken, getUserFromToken } from '@/app/api/services/tokenService';
+import { db } from "@/db/db";
 import { eq } from 'drizzle-orm/expressions';
-import { users, usersSession } from '@/db/appSchema'
+import { users, usersSession } from '@/db/authSchema'
 import bcrypt from 'bcryptjs';
 import { NextRequest, NextResponse } from 'next/server'; // Utilisation des objets Next.js
 import { logUserActivity } from '@/utils/logging'; // Importer depuis le bon chemin
 import { ChangePasswordSchema } from '@/validation/ChangePasswordSchema'; // Importation du schéma de validation
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { setAuthCookies } from '@/app/api/services/allTokenService';
+import { setAuthCookies } from '@/app/api/services/tokenService';
 import rateLimiter from '@/utils/rateLimiter';
-import { TOKEN_CONFIG } from '@/app/api/services/allTokenService';
+import { TOKEN_CONFIG } from '@/app/api/services/tokenService';
 import crypto from 'crypto';
+
+//----- LOGIN -----//
+// Permet de se connecter à l'application //
 
 
 // Route de connexion pour les utilisateurs //
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest) {
 
 
     // Vérifier si l'utilisateur existe dans la base de données
-	console.log('🔍 Vérification de l’utilisateur en base');
+	console.log('🔍 Vérification de lutilisateur en base');
     const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
 	console.log('✅ Utilisateur trouvé :', user[0]);
     if (!user[0]) {
@@ -57,18 +60,16 @@ export async function POST(request: NextRequest) {
 	console.log('✅ Mot de passe valide');
 
 
-    // Si le mot de passe est valide, générer un token JWT avec userId
-	console.log('🔍 Génération du token d’accès');
-    const accessToken = generateAccessToken(user[0].users_id, user[0].account_type);
+    // Si le mot de passe est valide, générer un token JWT
+	console.log('🔍 Génération du token daccès');
+    const accessToken = generateAccessToken(user[0].id, user[0].account_type);
 	console.log('🔍 Génération du token de rafraîchissement');
-    const refreshToken = generateRefreshToken(user[0].users_id, user[0].account_type);
+    const refreshToken = generateRefreshToken(user[0].id);
 	console.log('✅ Token de rafraîchissement généré :', refreshToken);
 
 
-
-
 	// Récupérer l'adresse IP et l'agent utilisateur
-	console.log('🔍 Récupération de l\'adresse IP et de l\'agent utilisateur');
+	console.log('🔍 Récupération de ladresse IP et de lagent utilisateur');
 	const ipAddress = request.headers.get('x-forwarded-for') ||
 	request.headers.get('x-real-ip') ||
 	request.headers.get('remote-addr') || ''; // Si aucune adresse IP trouvée
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
 	console.log('🎫 UUID généré :', generatedUuid);
 
 	await db.insert(usersSession).values({
-			users_id: user[0].users_id,
+			users_id: user[0].id,
 			token: hashedToken,
 			uuid: generatedUuid,
 			expired_at: new Date(Date.now() + TOKEN_CONFIG.DURATION.REFRESH_COOKIE * 1000),
@@ -96,14 +97,14 @@ export async function POST(request: NextRequest) {
 
 		// Récupérer la session en base
 		const storedSession = await db.select().from(usersSession)
-		.where(eq(usersSession.users_id, user[0].users_id))
+		.where(eq(usersSession.users_id, user[0].id))
 		.limit(1);
 
 console.log("📄 Session en base après insertion :", storedSession);
 
 
 		const sessionData = {
-			users_id: user[0].users_id,
+			users_id: user[0].id,
 			token: refreshToken,
 			uuid: generatedUuid,
 			expired_at: new Date(Date.now() + TOKEN_CONFIG.DURATION.REFRESH_COOKIE * 1000),
@@ -121,7 +122,7 @@ console.log("📄 Session en base après insertion :", storedSession);
 	const response = NextResponse.json({
 		message: 'Connexion réussie',
 		user: {
-			users_id: user[0].users_id,
+			users_id: user[0].id,
 			account_type: user[0].account_type,
 			email: user[0].email,
 			isAuthenticated: true
@@ -140,7 +141,7 @@ console.log("📄 Session en base après insertion :", storedSession);
 
 	console.log("Ajout du cookie dans les en-têtes de la réponse");
 
-	console.log("Token généré pour l'utilisateur:", user[0].users_id);
+	console.log("Token généré pour l'utilisateur:", user[0].id);
 
     console.log('📤 Réponse envoyée avec succès');
 	return response;
@@ -168,7 +169,7 @@ export async function GET(request: NextRequest) {
 	  const user = await db
 		.select({ email: users.email })
 		.from(users)
-		.where(eq(users.users_id, userId))
+		.where(eq(users.id, userId))
 		.limit(1);
 
 	  if (!user || user.length === 0) {

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../[...nextauth]/route";
-import db from "@/db/db";
+import {db} from "@/db/db";
 import { eq } from "drizzle-orm";
-import { users } from "@/db/appSchema";
-import { generateAccessToken, generateRefreshToken } from "@/app/api/services/allTokenService";
+import { users } from "@/db/authSchema";
+import { generateAccessToken, generateRefreshToken } from "@/app/api/services/tokenService";
 
+//----- SOCIAL CALLBACK -----//
+// Permet de gérer la connexion sociale //
+
+
+//----- GET -----//
+// Route pour gérer la connexion sociale //
 export async function GET(request: Request) {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
@@ -16,35 +22,35 @@ export async function GET(request: Request) {
     }
 
     // Vérifier si l'utilisateur existe déjà
-    let user = await db.query.users.findFirst({
+    await db.insert(users).values({
+      id: crypto.randomUUID(),
+      uuid: crypto.randomUUID(),
+      email: session.user.email,
+      account_type: "user",
+      user_name: session.user.name || "User",
+      password: "",
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    const user = await db.query.users.findFirst({
       where: eq(users.email, session.user.email),
     });
 
     if (!user) {
-      // Créer l'utilisateur s'il n'existe pas
-      const [newUser] = await db.insert(users).values({
-        email: session.user.email,
-        account_type: "user",
-        first_name: session.user.name?.split(" ")[0] || "",
-        last_name: session.user.name?.split(" ")[1] || "",
-        password: "", // Pas de mot de passe pour les connexions sociales
-        created_at: new Date(),
-        updated_at: new Date(),
-      }).returning();
-      user = newUser;
+      return NextResponse.redirect(new URL("/login?error=UserNotFound", baseUrl));
     }
 
     // Générer les tokens de votre système
-    const accessToken = generateAccessToken(user.users_id.toString(), user.account_type);
-    const refreshToken = generateRefreshToken(user.users_id.toString(), user.account_type);
+    const accessToken = generateAccessToken(user.id, user.account_type);
+    const refreshToken = generateRefreshToken(user.id);
 
     // Créer la réponse avec redirection
     const userData = {
-      user_id: user.users_id,
+      user_id: user.id,
       email: user.email,
       account_type: user.account_type,
-      first_name: user.first_name,
-      last_name: user.last_name
+      name: user.name
     };
 
     const response = NextResponse.redirect(
@@ -60,6 +66,7 @@ export async function GET(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 7 jours
     });
 
+	// Définir les cookies de refresh token
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

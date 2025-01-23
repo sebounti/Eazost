@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import rateLimiter from "@/utils/rateLimiter";
-import db from "@/db/db";
-import { users } from "@/db/appSchema";
+import { db } from "@/db/db";
+import { users } from "@/db/authSchema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { ChangePasswordSchema } from "@/validation/ChangePasswordSchema";
-import { getUserFromToken } from "@/app/api/services/allTokenService";
+import { getUserFromToken } from "@/app/api/services/tokenService";
 
+//----- CHANGE PASSWORD -----//
+// Permet de changer le mot de passe de l'utilisateur //
+
+
+// Permet de changer le mot de passe de l'utilisateur //
 export async function PATCH(
   request: NextRequest,
 ): Promise<NextResponse> {
@@ -30,7 +35,7 @@ export async function PATCH(
     }
 
     const user = await db.select().from(users)
-      .where(eq(users.users_id, userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     if (!user || user.length === 0) {
@@ -62,7 +67,7 @@ export async function PATCH(
     const hashedPassword = await bcrypt.hash(validatedData.newPassword, 10);
     await db.update(users)
       .set({ password: hashedPassword })
-      .where(eq(users.users_id, userId));
+      .where(eq(users.id, userId));
 
     return NextResponse.json(
       { message: "Mot de passe mis à jour avec succès" },

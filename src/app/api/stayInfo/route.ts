@@ -2,11 +2,16 @@ import { db } from '@/db/db';
 import { NextResponse } from 'next/server';
 import { stayInfo } from '@/db/appSchema';
 import { eq } from 'drizzle-orm';
+import { NextRequest } from 'next/server';
+import { accommodation } from '@/db/appSchema';
 
-// GET - Récupérer les infos
-export async function GET(request: Request) {
-	const { searchParams } = new URL(request.url);
-	const userId = searchParams.get('userId');
+//----- route stayInfo -----//
+// route pour les informations de séjour //
+
+//----- GET -----//
+// Route pour récupérer les infos //
+export async function GET(request: NextRequest) {
+	const userId = request.nextUrl.searchParams.get('userId');
 
 	console.log('GET /api/stayInfo - userId:', userId);
 
@@ -18,45 +23,32 @@ export async function GET(request: Request) {
 	}
 
 	try {
-		// D'abord, récupérer les logements de l'utilisateur
-		console.log('Recherche des logements pour userId:', userId);
-		const accommodations = await db.query.accommodation.findMany({
-			where: (accommodation, { eq }) => eq(accommodation.users_id, userId)
-		});
+		// Jointure pour récupérer les stayInfo liés aux logements de l'utilisateur
+		const stayInfos = await db
+			.select({
+				stay_info_id: stayInfo.stay_info_id,
+				title: stayInfo.title,
+				description: stayInfo.description,
+				category: stayInfo.category,
+				photo_url: stayInfo.photo_url,
+				accommodation_id: stayInfo.accommodation_id,
+				created_at: stayInfo.created_at,
+				updated_at: stayInfo.updated_at
+			})
+			.from(stayInfo)
+			.innerJoin(accommodation, eq(stayInfo.accommodation_id, accommodation.accommodation_id))
+			.where(eq(accommodation.users_id, userId));
 
-		console.log('Logements trouvés:', accommodations);
-
-		if (!accommodations.length) {
-			return NextResponse.json({
-				message: 'Aucun logement trouvé',
-				data: []
-			});
-		}
-
-		// Ensuite, récupérer les stayInfo pour ces logements
-		console.log('Recherche des stayInfo pour les logements:', accommodations.map(a => a.accommodation_id));
-		const stayInfos = await db.query.stayInfo.findMany({
-			where: (stayInfo, { inArray }) =>
-				inArray(stayInfo.accommodation_id, accommodations.map(acc => acc.accommodation_id))
-		});
-
-		console.log('StayInfos trouvés:', stayInfos);
-
-		return NextResponse.json({
-			message: 'Données récupérées avec succès',
-			data: stayInfos
-		});
-	} catch (error: any) {
-		console.error('Erreur détaillée:', error);
-		return NextResponse.json(
-			{ message: 'Erreur serveur', error: error.message },
-			{ status: 500 }
-		);
+		return NextResponse.json(stayInfos);
+	} catch (error) {
+		console.error('Erreur:', error);
+		return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
 	}
 }
 
 
-// POST - Créer une nouvelle info
+//----- POST -----//
+// Route pour créer une info de séjour //
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -99,7 +91,8 @@ export async function POST(req: Request) {
 	}
 }
 
-// PUT - Mettre à jour une info
+//----- PUT -----//
+// Route pour mettre à jour une info de séjour //
 export async function PUT(request: Request) {
 	try {
 		const { id, ...data } = await request.json();
@@ -112,7 +105,8 @@ export async function PUT(request: Request) {
 	}
 }
 
-// DELETE - Supprimer une info
+//----- DELETE -----//
+// Route pour supprimer une info de séjour //
 export async function DELETE(request: Request) {
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get('id');

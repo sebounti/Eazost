@@ -3,8 +3,12 @@ import { NextResponse } from 'next/server';
 import { product } from '@/db/appSchema';
 import { eq } from 'drizzle-orm';
 
+//----- route products -----//
+// route pour les produits //
 
-// POST - Créer un produit
+
+//----- POST -----//
+// Route pour créer un produit //
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -42,7 +46,8 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT - Mettre à jour un produit
+//----- PUT -----//
+// Route pour mettre à jour un produit //
 export async function PUT(request: Request) {
 	const { id, ...data } = await request.json();
 	const result = await db.update(product)
@@ -51,7 +56,8 @@ export async function PUT(request: Request) {
 	return NextResponse.json(result);
 }
 
-// DELETE - Supprimer un produit
+//----- DELETE -----//
+// Route pour supprimer un produit //
 export async function DELETE(request: Request) {
 	const { id } = await request.json();
 	const result = await db.delete(product).where(eq(product.product_id, id));

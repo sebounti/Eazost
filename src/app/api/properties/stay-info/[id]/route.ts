@@ -1,39 +1,32 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { stayInfo } from "@/db/appSchema";
 import { eq } from "drizzle-orm";
 import { pool } from "@/db/db";
 
+//----- route stay-info -----//
+// route pour les informations de séjour //
 
-// GET - Récupérer les informations d'un logement
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const connection = await pool.getConnection();
+//----- GET -----//
+// Route pour récupérer les informations d'un logement //
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const logementId = parseInt(params.id);
+    const accommodationId = parseInt(params.id);
 
-    if (isNaN(logementId)) {
-      throw new Error('ID de logement invalide');
-    }
-
-	// on récupère les informations du logement en fonction de l'id du logement
-    const infoCards = await db
+    const stayInfos = await db
       .select()
       .from(stayInfo)
-      .where(eq(stayInfo.accommodation_id, logementId));
+      .where(eq(stayInfo.accommodation_id, accommodationId));
 
-	// on sérialise les données du logement
-    const serializedCards = infoCards.map(card => ({
-      ...card,
-      created_at: card.created_at instanceof Date ? card.created_at.toISOString() : null,
-      updated_at: card.updated_at instanceof Date ? card.updated_at.toISOString() : null
-    }));
-
-    return NextResponse.json(serializedCards);
-
+    return NextResponse.json(stayInfos);
   } catch (error) {
-    console.error("Erreur détaillée:", error);
-    return NextResponse.json([], { status: 500 });
-  } finally {
-    connection.release();
+    console.error('Erreur lors de la récupération des stay info:', error);
+    return NextResponse.json(
+      { error: 'Erreur serveur' },
+      { status: 500 }
+    );
   }
 }

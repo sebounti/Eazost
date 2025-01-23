@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { baseVerifyToken } from '@/app/api/services/allTokenService';
-import { upload } from '@/app/api/media/uploadPhoto';
-import db from '@/db/db';
+import { verifyToken } from '@/app/api/services/tokenService';
+import {db} from '@/db/db';
 import { usersInfo } from '@/db/appSchema';
 import { eq } from 'drizzle-orm';
 
+//----- route users -----//
+// route pour les utilisateurs //
+
+//----- PUT -----//
+// Route pour mettre à jour la photo de profil //
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
 	try {
 	  const userId = params.id;
@@ -17,10 +21,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 	  console.log('Token trouvé:', token);
 
-	  const isValidToken = await baseVerifyToken(token, {
-		tokenType: 'access',
-		checkDatabase: false
-	  });
+	  const isValidToken = await verifyToken(token, 'access');
 	  if (!isValidToken) {
 		console.log('Token invalide');
 		return NextResponse.json({ error: 'Token invalide ou expiré' }, { status: 401 });
@@ -39,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 	  // Mise à jour de la photo dans la base de données
 	  await db.update(usersInfo)
 		.set({ photo_url })
-		.where(eq(usersInfo.users_id, parseInt(userId)));
+		.where(eq(usersInfo.users_id, userId));
 
 	  // Retourner l'URL de la photo en cas de succès
 	  return NextResponse.json({ success: true, photo_url }, { status: 200 });

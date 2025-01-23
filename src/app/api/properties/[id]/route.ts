@@ -1,12 +1,13 @@
-// app/api/logements/[id]/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { accommodation, stayInfo, shop, accessCode } from "@/db/appSchema";
 import { eq } from "drizzle-orm";
 
-// Gestion de toutes les requêtes pour /api/logements/[id]
+//----- route properties -----//
+// route pour les propriétés //
 
-// GET pour récupérer un logement
+//----- GET -----//
+// Route pour récupérer un logement //
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const logement = await db
     .select()
@@ -16,7 +17,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   return NextResponse.json(logement);
 }
 
-// Route PATCH pour mettre à jour un logement
+//----- PUT -----//
+// Route pour mettre à jour un logement //
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -46,7 +48,8 @@ export async function PUT(
   }
 }
 
-// Route DELETE pour supprimer un logement
+//----- DELETE -----//
+// Route pour supprimer un logement //
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const id = parseInt(params.id);

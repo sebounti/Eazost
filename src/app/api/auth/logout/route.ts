@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { signOut } from 'next-auth/react';
+import { TOKEN_CONFIG } from '@/app/api/services/tokenService';
 
-// Route pour la déconnexion
+//----- LOGOUT -----//
+// Permet de se déconnecter de l'application //
+
+
+//----- POST -----//
+// Route pour la déconnexion //
 export async function POST() {
   try {
     const response = NextResponse.json(
@@ -9,8 +15,9 @@ export async function POST() {
       { status: 200 }
     );
 
-    // Supprimer le cookie
-    response.cookies.delete('accesstoken');
+    // Utiliser les bons noms de cookies
+    response.cookies.set(TOKEN_CONFIG.NAMES.ACCESS, '', { maxAge: 0 });
+    response.cookies.set(TOKEN_CONFIG.NAMES.REFRESH, '', { maxAge: 0 });
 
 	// Rediriger vers la page de login
 	await signOut({ callbackUrl: '/auth/login' });

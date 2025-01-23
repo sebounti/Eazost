@@ -1,4 +1,3 @@
-// app/api/logements/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { accommodation, stayInfo, shop } from "@/db/appSchema";
@@ -6,7 +5,11 @@ import { accommodationSchema } from "@/validation/PropertySchema";
 import { eq } from "drizzle-orm";
 import { ZodError } from "zod";
 
-// GET pour récupérer tous les logements ou les logements d'un utilisateur
+//----- Route properties -----//
+// route pour les propriétés //
+
+//----- GET -----//
+// Route pour récupérer tous les logements ou les logements d'un utilisateur //
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -89,7 +92,8 @@ export async function GET(request: Request) {
   }
 }
 
-// Création d'un nouveau logement
+//----- POST -----//
+// Route pour créer un nouveau logement //
 export async function POST(request: Request) {
   try {
     const data = await request.json();
