@@ -1,86 +1,124 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
-export default withAuth(
-  function middleware(req) {
-    console.log('\n🔒 --- Début Middleware ---');
-    console.log(`📍 Route demandée: ${req.nextUrl.pathname}`);
-    console.log('🔑 Token complet:', req.nextauth.token);
+// Routes protégées par rôle
+const PROTECTED_ROUTES = {
+  owner: [
+    '/dashboard',
+    '/dashboard/account',
+    '/dashboard/acessCode',
+    '/dashboard/infoCard',
+    '/dashboard/Messages',
+    '/dashboard/property',
+    '/dashboard/ShopManage',
+    '/api/dashboard',
+    '/api/properties',
+    '/api/stayInfo',
+    '/api/users',
+    '/api/shop',
+    '/api/stream'
+  ],
+  user: [
+    '/homePage',
+    '/user',
+    '/api/stays/user',
+    '/api/users/profile',
+    '/api/shop',
+    '/api/stream'
+  ]
+} as const;
 
-    const token = req.nextauth.token;
-    const isAuth = !!token;
-    const isAuthPage = req.nextUrl.pathname.startsWith('/login');
+// Seules routes publiques autorisées
+const PUBLIC_ROUTES = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/api/auth',  // Routes d'authentification
+  '/_next',     // Ressources Next.js
+  '/favicon.ico',
+  '/images'     // Images publiques
+];
 
-    console.log('🔑 État détaillé:', {
-      isAuth,
-      isAuthPage,
-      accountType: token?.account_type,
-      userId: token?.id,
-      email: token?.email
+export async function middleware(request: NextRequest) {
+  try {
+    const pathname = request.nextUrl.pathname;
+
+    // 1. Autoriser les ressources statiques et routes d'auth
+    if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+      // Si c'est /login et que l'utilisateur est connecté, rediriger
+      if (pathname === '/login') {
+        const token = await getToken({ req: request });
+        if (token?.account_type) {
+          const redirectPath = token.account_type === 'owner' ? '/dashboard' : '/homePage';
+          return NextResponse.redirect(new URL(redirectPath, request.url));
+        }
+      }
+      return NextResponse.next();
+    }
+
+    console.log('🚀 Middleware - Début pour:', pathname);
+
+    // 2. Vérifier l'authentification
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
     });
 
-    // Si c'est la page de login
-    if (isAuthPage) {
-      if (!isAuth) {
-        // Permettre l'accès à la page de login si non authentifié
-        return NextResponse.next();
-      }
-
-
-      const dashboardPath = token.account_type === 'owner'
-        ? '/dashboard'
-        : '/dashboard';
-
-      return NextResponse.redirect(new URL(dashboardPath, req.url));
+    if (!token?.accessToken) {
+      console.log('❌ Accès refusé - pas de token');
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Vérification de l'authentification
-    if (!isAuth) {
-      let callbackUrl = req.nextUrl.pathname;
-      return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, req.url));
+    // 3. Vérifier le rôle et les permissions
+    const userRole = token.account_type as keyof typeof PROTECTED_ROUTES;
+    if (!userRole) {
+      console.log('❌ Accès refusé - rôle non défini');
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Vérification des accès selon account_type
-    if (req.nextUrl.pathname.startsWith('/owner')) {
-      if (token.account_type !== 'owner') {
-        return NextResponse.redirect(new URL('/unauthorized', req.url));
-      }
+    // 4. Vérifier les accès selon le rôle
+    const ownerRoutes = PROTECTED_ROUTES.owner;
+    const userRoutes = PROTECTED_ROUTES.user;
+
+    // Rediriger les users qui tentent d'accéder aux routes owner
+    if (userRole === 'user' && ownerRoutes.some(route => pathname.startsWith(route))) {
+      console.log('❌ Accès refusé - route owner');
+      return NextResponse.redirect(new URL('/homePage', request.url));
     }
 
-    // Vérification des accès selon account_type
-    if (req.nextUrl.pathname.startsWith('/user')) {
-      console.log('🔍 Vérification accès /user:', {
-        actual: token.account_type,
-        required: 'user'
-      });
+    // Pour les API, renvoyer 403 au lieu de rediriger
+    if (pathname.startsWith('/api/')) {
+      const isAuthorized = PROTECTED_ROUTES[userRole].some(route =>
+        pathname.startsWith(route)
+      );
 
-      if (token.account_type !== 'user') {
-        console.log('❌ Accès refusé: mauvais type de compte');
-        return NextResponse.redirect(new URL('/unauthorized', req.url));
+      if (!isAuthorized) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Non autorisé' }),
+          { status: 403 }
+        );
       }
     }
 
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ req, token }) => {
-        // Permettre l'accès à /login sans token
-        if (req.nextUrl.pathname.startsWith('/login')) {
-          return true;
-        }
-        // Pour les autres routes, vérifier le token
-        return !!token;
-      },
-    },
+  } catch (error) {
+    console.error('🔴 Erreur middleware:', error);
+    const pathname = request.nextUrl.pathname;
+
+    if (pathname.startsWith('/api/')) {
+
+      return new NextResponse(
+        JSON.stringify({ error: 'Erreur serveur' }),
+        { status: 500 }
+      );
+    }
+    return NextResponse.redirect(new URL('/login', request.url));
   }
-);
+}
 
 export const config = {
   matcher: [
-    '/login',
-    '/owner/:path*',
-    '/user/:path*',
-    '/dashboard/:path*'
-  ]
-};
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
+}
