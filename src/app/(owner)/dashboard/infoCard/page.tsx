@@ -15,7 +15,7 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbS
 import { useSession } from "next-auth/react";
 import InfoCardForm from "@/components/card/forms/InfoCardForm";
 import { CARDINFORMATION_TYPES, InfoCardFormData } from "@/components/card/forms/InfoCardForm";
-import { useFilteredStayInfo } from "@/hook/useFilteredStayInfo";
+import { useFilteredStayInfo } from "@/hook/data/useFilteredStayInfo";
 
 
 // Page pour la gestion des cartes d'information

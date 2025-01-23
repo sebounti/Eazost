@@ -72,6 +72,7 @@ const calculateGlobalStats = (properties: any[] = []) => ({
   activeCodes: properties.reduce((sum, prop) => sum + (prop.activeCodes || 0), 0),
 })
 
+
 // Déplacer les données statiques vers une constante
 const INITIAL_CHART_DATA = [
   { month: "Janvier", totalSales: 186 },

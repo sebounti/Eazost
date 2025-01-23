@@ -12,11 +12,7 @@ import {
 	SidebarMenuButton,
 	SidebarTrigger,
   } from "@/components/ui/sidebar";
-import Dashboard_menu from "@/components/owner_components/Dashboard_menu";
-import UserProfile from "@/components/Dashboard/UserProfile";
-import "@/app/globals.css";
 import { cookies } from "next/headers";
-
 
 
 
