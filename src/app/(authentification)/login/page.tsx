@@ -7,7 +7,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/20/solid';
 import { signIn } from "next-auth/react";
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-
+import Link from 'next/link';
 
 /*
 Page de login
@@ -60,12 +60,11 @@ export default function LoginPage() {
 	// Fonction pour la connexion avec Google
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', {
-        callbackUrl: '/dashboard',  // Redirection directe vers le dashboard
-        redirect: true
-      });
+        await signIn('google', {
+            callbackUrl: '/dashboard'
+        });
     } catch (error) {
-      toast.error("Erreur lors de la connexion avec Google");
+        toast.error("Erreur lors de la connexion avec Google");
     }
   };
 
@@ -85,6 +84,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-gray-50">
       <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 lg:flex-none xl:px-24">
         <div className="flex justify-center m-4">
+		<Link href="/home">
           <Image
             className="mb-6 rounded-xl shadow-md border border-gray-300"
             src="/logo.png"
@@ -93,6 +93,7 @@ export default function LoginPage() {
             width={150}
             height={150}
           />
+        </Link>
         </div>
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <form onSubmit={handleSubmit} className="mt-4">
@@ -174,7 +175,7 @@ export default function LoginPage() {
                 className="mx-2 p-4 border border-gray-300 rounded-xl shadow-lg bg-white hover:bg-gray-50"
               >
                 <span className="sr-only">Se connecter avec Facebook</span>
-                <Image src="/facebook.svg" alt="" className="w-6" width={24} height={24}/>
+                <Image src="/images/facebook.svg" alt="" className="w-8 h-8" width={24} height={24}/>
               </button>
               <button
                 type="button"
@@ -182,7 +183,7 @@ export default function LoginPage() {
                 className="mx-2 p-4 border border-gray-300 rounded-xl shadow-lg bg-white hover:bg-gray-50"
               >
                 <span className="sr-only">Se connecter avec Google</span>
-                <Image src="/Google.svg" alt="" className="w-6" width={24} height={24}/>
+                <Image src="/images/google.svg" alt="" className="w-8 h-8" width={24} height={24}/>
               </button>
             </div>
           </div>
