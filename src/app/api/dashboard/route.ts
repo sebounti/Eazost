@@ -7,4 +7,5 @@ import { NextResponse } from 'next/server';
 // Route pour le dashboard //
 export async function GET() {
   return NextResponse.json({ message: 'Dashboard API fonctionne' });
+
 }
