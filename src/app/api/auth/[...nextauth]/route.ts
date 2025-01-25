@@ -8,6 +8,7 @@ import { users } from "@/db/authSchema";
 import bcrypt from "bcrypt";
 import { z } from 'zod';
 import { generateRefreshToken, generateAccessToken, setAuthCookies, saveSession, TOKEN_CONFIG } from "@/app/api/services/tokenService";
+import crypto from "crypto";
 
 //----- AUTH CONFIGURATION -----//
 // Gere l'authentification et la gestion des sessions //
@@ -52,6 +53,7 @@ declare module "next-auth/jwt" {
     }
 }
 
+// Validation des credentials avec zod
 const credentialsSchema = z.object({
     email: z.string().email("Email invalide"),
     password: z.string()
@@ -61,6 +63,7 @@ const credentialsSchema = z.object({
         .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial")
 });
 
+// Options d'authentification
 export const authOptions: NextAuthOptions = {
     providers: [
 
@@ -97,7 +100,8 @@ export const authOptions: NextAuthOptions = {
             clientSecret: process.env.GOOGLE_SECRET!,
             authorization: {
                 params: {
-                    prompt: "select_account"
+                    prompt: "select_account",
+                    response_type: "code"
                 }
             },
             profile(profile) {
@@ -116,78 +120,126 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
 		// 1. SignIn - Juste vérifier l'utilisateur
         async signIn({ user, account }) {
-            try {
-                if (account?.type === "credentials" && user.email) {
-                    const dbUser = await db
-                        .select()
-                        .from(users)
-                        .where(eq(users.email, user.email))
-                        .limit(1)
-                        .then(rows => rows[0]);
+			try {
+				if (account?.type === "credentials" && user.email) {
+					// Logique existante pour credentials
+					const dbUser = await db
+						.select()
+						.from(users)
+						.where(eq(users.email, user.email))
+						.limit(1)
+						.then(rows => rows[0]);
 
-                    if (dbUser) {
-                        // Stocker les infos utilisateur
-                        user.id = dbUser.id;
-                        user.account_type = dbUser.account_type;
-                        return true;
-                    }
-                }
-                return false;
-            } catch (error) {
-                console.error('🔴 Erreur dans signIn:', error);
-                return false;
-            }
-        },
+					if (dbUser) {
+						console.log("🔄 utilisateur trouve :", dbUser.id);
+						user.id = dbUser.id;
+						user.account_type = dbUser.account_type;
+						return true;
+					} else {
+						console.error("🔴 Connexion refusée : utilisateur non trouvé. merci de d'abord créer un compte");
+						return false;
+					}
+				}
 
-		// 2. JWT - Générer les tokens une seule fois
-        async jwt({ token, user, trigger, session }) {
-            console.log('🎫 JWT Callback - Début', {
-                trigger,
-                hasUser: !!user,
-                tokenBefore: {
-                    hasId: !!token.id,
-                    hasAccessToken: !!token.accessToken,
-                }
-            });
+				// Si le provider est OAuth
+				if (account?.type === "oauth" && user.email) {
+					// Vérification pour OAuth : Ne pas créer de compte
+					const dbUser = await db
+						.select()
+						.from(users)
+						.where(eq(users.email, user.email))
+						.limit(1)
+						.then(rows => rows[0]);
 
-            // Si on n'a pas de tokens mais qu'on a un ID, on les génère
-            if (!token.accessToken && token.id) {
-                console.log('🔄 Régénération des tokens pour:', token.id);
+					if (!dbUser) {
+						console.error("🔴 Connexion refusée : utilisateur OAuth non trouvé. merci de d'abord créer un compte");
+						return "/register";
+					}
 
-                const accessToken = generateAccessToken(token.id, token.account_type || 'user');
-                const refreshToken = generateRefreshToken(token.id);
+					// Utilisateur trouvé, associer l'ID et le type de compte
+					console.log("🔄 utilisateur trouve :", dbUser.id);
+					user.id = dbUser.id;
+					user.account_type = dbUser.account_type;
+					return true;
+				}
 
-                token.accessToken = accessToken;
-                token.refreshToken = refreshToken;
+				console.warn("🔴 Connexion refusée :", account?.type);
+				return false; // Retourner false en cas d'erreur
+			} catch (error) {
+				console.error('❌ Erreur signIn:', error);
+				return false; // Retourner false en cas d'erreur
+			}
+		},
 
-                await saveSession(token.id, refreshToken);
-                console.log('💾 Nouveaux tokens sauvegardés');
-            }
 
-            // Si on a un nouvel utilisateur (signIn)
-            if (trigger === "signIn" && user) {
-                console.log('👤 Nouvel utilisateur:', user.id);
 
-                const accessToken = generateAccessToken(user.id, user.account_type);
-                const refreshToken = generateRefreshToken(user.id);
+		// callback de verification jwt
+		async jwt({ token, user, trigger }) {
+			console.log('🎫 JWT Callback - Début', {
+				trigger,
+				hasUser: !!user,
+				tokenBefore: {
+					hasId: !!token.id,
+					hasAccessToken: !!token.accessToken,
+				}
+			});
 
-                token.id = user.id;
-                token.account_type = user.account_type;
-                token.accessToken = accessToken;
-                token.refreshToken = refreshToken;
+			// Étape 1 : Récupération dynamique de account_type si nécessaire
+			if (!token.account_type && token.id) {
+				console.log('🔄 Récupération de account_type pour:', token.id);
 
-                await saveSession(user.id, refreshToken);
-            }
+				// Récupérer le type de compte de la base de données avec Drizzle
+				const accountData = await db
+					.select({
+						account_type: users.account_type,
+					})
+					.from(users)
+					.where(eq(users.id, token.id))
+					.limit(1)
+					.then((res) => res[0]);
 
-            console.log('🎫 JWT Callback - Fin', {
-                hasTokens: {
-                    access: !!token.accessToken,
-                    refresh: !!token.refreshToken
-                }
-            });
+				token.account_type = accountData?.account_type || 'user'; // Défaut "user" si non trouvé
+			}
 
-            return token;
-        },
+			// Étape 2 : Générer de nouveaux tokens si nécessaire
+			if (!token.accessToken && token.id) {
+				console.log('🔄 Régénération des tokens pour:', token.id);
+
+				const accessToken = generateAccessToken(token.id, token.account_type);
+				const refreshToken = generateRefreshToken(token.id);
+
+				token.accessToken = accessToken;
+				token.refreshToken = refreshToken;
+
+				await saveSession(token.id, refreshToken);
+				console.log('💾 Nouveaux tokens sauvegardés');
+			}
+
+			// Étape 3 : Si c'est une connexion initiale (trigger signIn)
+			if (trigger === "signIn" && user) {
+				console.log('👤 Nouvel utilisateur:', user.id);
+
+				const accessToken = generateAccessToken(user.id, user.account_type);
+				const refreshToken = generateRefreshToken(user.id);
+
+				token.id = user.id;
+				token.account_type = user.account_type;
+				token.accessToken = accessToken;
+				token.refreshToken = refreshToken;
+
+				await saveSession(user.id, refreshToken);
+			}
+
+			console.log('🎫 JWT Callback - Fin', {
+				hasTokens: {
+					access: !!token.accessToken,
+					refresh: !!token.refreshToken,
+				},
+			});
+
+			return token;
+		},
+
 
 		// 3. Session - Transmettre les tokens à la session
         async session({ session, token }) {
@@ -198,11 +250,21 @@ export const authOptions: NextAuthOptions = {
                 session.refreshToken = token.refreshToken;
             }
             return session;
-        }
-    },
+        },
+
+		// redirection selon le type de compte
+        async redirect({ url, baseUrl }) {
+            const accountType = users?.account_type || 'user';
+			if (url.includes('/api/auth/callback/google')) {
+				return `${baseUrl}/${accountType}/dashboard`;
+			}
+			return url.startsWith(baseUrl) ? url : baseUrl;
+		}
+	},
+
     pages: {
         signIn: '/login',
-        error: '/error'
+        error: '/login'
     },
     session: {
         strategy: "jwt",
