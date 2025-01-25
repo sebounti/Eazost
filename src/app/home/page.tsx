@@ -29,9 +29,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className='min-h-screen overflow-hidden bg-stone-100'>
+    <div className="flex flex-col min-h-screen auth-background">
       <div className="flex flex-col items-center justify-center w-full h-full">
-        <div className="bg-[url('/photo1.webp')] relative bg-cover bg-center bg-fixed h-screen w-full flex flex-col mb-5">
+        <div className="bg-[url('/photo1.jpg')] relative bg-cover bg-center bg-fixed h-screen w-full flex flex-col mb-5">
           <HomeNavbar isBlurred={isBlurred}/>
           <div className="flex flex-col items-center justify-end p-5 mt-64 ">
             <TypingTitle  />
@@ -41,13 +41,13 @@ export default function HomePage() {
           </div>
         </div>
         <div className='flex flex-col items-center justify-center p-3 m-5  '>
-          <h1 className="p-2 m-4 text-5xl font-semibold sans-font text-slate-800">Découvrez TravelBuddy </h1>
+          <h1 className="p-2 m-4 text-5xl font-semibold sans-font text-slate-800">Découvrez Eazost </h1>
           <h3 className="p-2 m-2 text-3xl font-thin sans-font text-amber-800">Votre assistant de séjour tout-en-un</h3>
-          <p className="m-5 text-2xl font-thin tracking-wide text-center text-gray-800">Travel Buddy est une application innovante conçue pour rendre chaque séjour plus agréable et plus simple,
+          <p className="m-5 text-2xl font-thin tracking-wide text-center text-gray-800">Eazost est une application innovante conçue pour rendre chaque séjour plus agréable et plus simple,
             que vous soyez propriétaire ou voyageur. Pour les propriétaires, elle offre un moyen pratique de gérer leurs locations, avec des options pour planifier les services à l'avance, fournir des instructions sur les équipements,
             et rester en contact avec les vacanciers. Les voyageurs, quant à eux, bénéficient d&apos;une expérience améliorée grâce à la possibilité de réserver des services comme la livraison de nourriture, des kits de nettoyage, ou encore des guides pratiques sur l'utilisation des appareils domestiques.</p>
 
-          <p className="m-5 text-2xl font-thin tracking-wide text-center text-gray-800">Avec Travel Buddy, transformez la gestion des séjours en une tâche simple et efficace,
+          <p className="m-5 text-2xl font-thin tracking-wide text-center text-gray-800">Avec Eazost, transformez la gestion des séjours en une tâche simple et efficace,
             en profitant d&lsquo;un accès personnalisé aux informations clés et en optimisant le confort des invités.
             Laissez-nous vous accompagner dans la gestion des détails pour que vous puissiez vous concentrer sur l&apos;essentiel : profiter de chaque moment.</p>
         </div>
@@ -79,8 +79,8 @@ export default function HomePage() {
             />
           </div>
           <div className="flex flex-col items-center justify-center w-full p-5 m-5 md:w-1/2">
-            <h1 className="p-2 m-4 text-5xl font-semibold sans-font text-slate-800">Plateforme d&apos;achat personnalisée</h1>
-            <p className="text-2xl font-thin tracking-wide text-center text-gray-800">
+            <h1 className=" pb-2 my-2 text-5xl font-semibold sans-font text-slate-800">Plateforme d&apos;achat personnalisée</h1>
+            <p className="text-2xl font-thin tracking-wide text-left text-gray-800">
               Offrez à vos clients la possibilité d&apos;acheter des services supplémentaires directement via notre plateforme d&apos;achat intégrée.
             </p>
           </div>
@@ -97,8 +97,8 @@ export default function HomePage() {
             />
           </div>
           <div className="flex flex-col items-center justify-center w-full p-5 m-5 text-balance md:w-1/2">
-            <h1 className="p-2 m-4 text-5xl font-semibold sans-font text-slate-800">Communication simplifiée</h1>
-            <p className="text-2xl font-thin tracking-wide text-center text-gray-800">
+            <h1 className="pb-2 my-2 text-5xl font-semibold sans-font text-slate-800">Communication simplifiée</h1>
+            <p className="text-2xl font-thin tracking-wide text-left text-gray-800">
               Un système de chat intégré permet une communication fluide et instantanée entre vous et vos hotes.
             </p>
           </div>
@@ -114,8 +114,8 @@ export default function HomePage() {
             />
           </div>
           <div className="flex flex-col items-center justify-center w-full p-5 m-5 md:w-1/2">
-            <h1 className="p-2 m-4 text-5xl font-semibold sans-font text-slate-800">Guide local interactif</h1>
-            <p className="text-2xl font-thin tracking-wide text-center text-gray-800">
+            <h1 className="pb-2 my-2 text-5xl font-semibold sans-font text-slate-800">Guide local interactif</h1>
+            <p className="text-2xl font-thin tracking-wide text-left text-gray-800">
               Offrez à vos invités des recommandations personnalisées pour découvrir les meilleurs sites touristiques, restaurants, magasins et activités de votre région.
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      <div className="w-full mt-auto">
+      <div className="w-full mt-auto shrink-0">
         <Footer className={''} />
       </div>
     </div>
