@@ -12,7 +12,7 @@ import {
 	MessageCircle,
 	KeyRound
 } from "lucide-react"
-import { useEffect, useCallback } from "react"
+import { useEffect } from "react"
 import { signOut } from "next-auth/react"
 import { useSession } from "next-auth/react"
 
@@ -20,7 +20,7 @@ import { useSession } from "next-auth/react"
 import { useUserinfoStore } from "@/stores/userinfoStore"
 
 // Components
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,68 +40,103 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-// Menu items
-const items = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Logement",
-    url: "/dashboard/property",
-    icon: Inbox,
-  },
-  {
-    title: "Carte information",
-    url: "/dashboard/infoCard",
-    icon: MapPin,
-  },
-  {
-    title: "Boutique",
-    url: "/dashboard/ShopManage",
-    icon: ShoppingCart,
-  },
-  {
-	title: "Code Access",
-	url: "/dashboard/acessCode",
-	icon: KeyRound,
-  },
-  {
-	title: "Messagerie",
-	url: "/dashboard/Messages",
-	icon: MessageCircle,
-  },
-  {
-    title: "Deconnexion",
-    url: "#",
-    icon: LogOut,
-    className: "text-red-500",
-    onClick: () => signOut({ callbackUrl: '/login' })
-  },
-]
+
 
 export function AppSidebar() {
   const { data: session, status } = useSession()
+
+  useEffect(() => {
+	console.log('🔵 Status de la session :', status);
+  	console.log('🔵 Données de la session :', session);
+  }, [status, session])
+
+
+ // Si la session est en cours de chargement
+ if (status === "loading") {
+    return <div>Chargement...</div>
+  }
+
+   // Si l'utilisateur n'est pas connecté
+   if (status === "unauthenticated") {
+	console.log("🔴 L'utilisateur n'est pas connecté, redirection vers la page de login")
+    window.location.href = "/login"
+    return null
+  }
+
+
   const userInfo = useUserinfoStore((state) => state.userInfo)
   const fetchUserInfo = useUserinfoStore((state) => state.fetchBasicInfo)
 
+  // verifie si utilisateur est connecter
   useEffect(() => {
     if (session?.user?.id) {
       fetchUserInfo(session.user.id.toString())
     }
   }, [session?.user?.id, fetchUserInfo])
 
-  // Si la session est en cours de chargement
-  if (status === "loading") {
-    return <div>Chargement...</div>
-  }
 
-  // Si l'utilisateur n'est pas connecté
-  if (status === "unauthenticated") {
-    window.location.href = "/login"
-    return null
-  }
+
+  // gestion de deconnexion
+  const handleLogout = async () => {
+	try {
+	  // Appeler l'API de déconnexion
+	  const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+
+	  if (!response.ok) {
+		throw new Error('Erreur lors de la déconnexion');
+	  }
+	  console.log("🔴 Déconnexion réussie")
+	  console.log("🔴 attente de redirection vers la page de login")
+
+	  // Redirection après succès
+	  setTimeout(() => {
+		window.location.href = '/login';
+	  }, 3000);	} catch (error) {
+	  console.error('Erreur lors de la déconnexion :', error);
+	}
+  };
+
+// Menu items
+const items = [
+	{
+	  title: "Dashboard",
+	  url: "/dashboard",
+	  icon: Home,
+	},
+	{
+	  title: "Logement",
+	  url: "/dashboard/property",
+	  icon: Inbox,
+	},
+	{
+	  title: "Carte information",
+	  url: "/dashboard/infoCard",
+	  icon: MapPin,
+	},
+	{
+	  title: "Boutique",
+	  url: "/dashboard/ShopManage",
+	  icon: ShoppingCart,
+	},
+	{
+	  title: "Code Access",
+	  url: "/dashboard/acessCode",
+	  icon: KeyRound,
+	},
+	{
+	  title: "Messagerie",
+	  url: "/dashboard/Messages",
+	  icon: MessageCircle,
+	},
+	{
+	  title: "Deconnexion",
+	  url: "#",
+	  icon: LogOut,
+	  className: "text-red-500",
+	  onClick: handleLogout,
+	}
+  ]
+
 
   return (
     <Sidebar
@@ -152,7 +187,6 @@ export function AppSidebar() {
                       <User2 className="w-10 h-10 p-2 bg-gray-100 rounded-xl" />
                     )}
                     <div className="flex flex-col text-left">
-                      <span className="font-medium text-lg">{userInfo?.first_name || "Prénom"}</span>
                       <span className="text-sm text-gray-500">{session?.user?.email || "Email"}</span>
                     </div>
                     <ChevronUp className="ml-auto" />
@@ -174,9 +208,9 @@ export function AppSidebar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-sm text-gray-700 hover:bg-amber-200">
-                  <Link href="/logout">
+                  <button onClick={handleLogout}>
                     <span>Déconnexion</span>
-                  </Link>
+                  </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

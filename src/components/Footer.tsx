@@ -1,6 +1,7 @@
 // components/Footer.js
 "use client"
 import Image from "next/image";
+import Link from 'next/link';
 
 
 interface FooterProps {
@@ -54,15 +55,15 @@ export default function Footer({ }: FooterProps) {
 		  <ul className="flex space-x-6 md:order-2">
 
 			<a href="#" className="text-gray-400 hover:text-gray-500">
-			<Image src="/twitter-sign.svg" alt="twitter icone" className="w-6" width={60}  height={60}/>
+			<Image src="/images/facebook.svg" alt="facebook" className="w-6" width={60}  height={60}/>
 			</a>
 
 			<a href="#" className="text-gray-400 hover:text-gray-500">
-			<Image src="/instagram.svg" alt="instagram icone" className="w-6" width={60}  height={60}/>
+			<Image src="/images/twitter-sign.svg" alt="twitter" className="w-6" width={60}  height={60}/>
 			</a>
 
 			<a href="#" className="text-gray-400 hover:text-gray-500">
-			<Image src="/facebook.svg" alt="facebook" className="w-6" width={60}  height={60}/>
+			<Image src="/images/instagram.svg" alt="instagram" className="w-6" width={60}  height={60}/>
 			</a>
 
 		</ul>
