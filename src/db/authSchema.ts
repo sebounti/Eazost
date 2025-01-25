@@ -42,9 +42,9 @@ export const sessions = mysqlTable('sessions', {
 
 // Table "Users_verification"
 export const usersVerification = mysqlTable('usersVerification', {
-	identifier: varchar('identifier', { length: 255 }).notNull(),
-	token: varchar('token', { length: 255 }).notNull(),
-	expires: timestamp('expires').notNull(),
+	email: varchar('email', { length: 255 }).notNull(),
+	verified_at: timestamp('verified_at'),
+	verification_token: varchar('verification_token', { length: 255 }).notNull(),
   });
 
     // Table "Users_resetpassword"

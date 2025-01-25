@@ -20,3 +20,5 @@ export const db = drizzle(connection, {
   },
   mode: 'default' as const
 });
+
+export default connection;

@@ -25,8 +25,8 @@ export const stayInfo = mysqlTable('stay_info', {
 	stay_info_id: int('stay_info_id').primaryKey().autoincrement(),
 	accommodation_id: int('accommodation_id').notNull(),
 	title: varchar('title', { length: 255 }).notNull(),
-	description: text('description').notNull(),
-	category: varchar('category', { length: 100 }),
+	description: varchar('description', { length: 1000 }),
+	category: varchar('category', { length: 255 }),
 	photo_url: varchar('photo_url', { length: 255 }),
 	created_at: timestamp('created_at').defaultNow().notNull(),
 	updated_at: timestamp('updated_at').defaultNow().notNull()
