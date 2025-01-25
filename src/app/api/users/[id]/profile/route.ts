@@ -1,8 +1,11 @@
+//	api/users/[id]/profile/route.ts
+
+
 import { db } from "@/db/db";
-import { users } from "@/db/authSchema";
 import { usersInfo } from "@/db/appSchema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { UsersInfoSchema } from "@/validation/UsersInfoSchema";
 
 export async function GET(
     request: Request,
@@ -50,6 +53,9 @@ export async function GET(
     }
 }
 
+
+//----- POST -----//
+// Route pour créer un profil //
 export async function POST(
     request: Request,
     { params }: { params: { id: string } }
@@ -57,6 +63,13 @@ export async function POST(
     try {
         console.log('📝 POST - Création du profil pour ID:', params.id);
         const data = await request.json();
+
+
+		// verification zod pour les données
+		const zodValidation = UsersInfoSchema.safeParse(data);
+		if (!zodValidation.success) {
+			return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+		}
 
         // Créer un nouveau profil
         const newProfile = {
@@ -73,6 +86,7 @@ export async function POST(
             created_at: new Date()
         };
 
+		// Créer le profil
         await db.insert(usersInfo).values(newProfile);
         console.log('✅ Profil créé avec succès');
 
@@ -86,6 +100,9 @@ export async function POST(
     }
 }
 
+
+//----- PUT -----//
+// Route pour mettre à jour un profil //
 export async function PUT(
     request: Request,
     { params }: { params: { id: string } }

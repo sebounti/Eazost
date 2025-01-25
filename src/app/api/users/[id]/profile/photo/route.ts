@@ -1,3 +1,6 @@
+//	api/users/[id]/profile/photo/route.ts
+
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/app/api/services/tokenService';
 import {db} from '@/db/db';

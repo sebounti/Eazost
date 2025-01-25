@@ -1,3 +1,5 @@
+//	api/users/[id]/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm/expressions';
 import {db} from '@/db/db';
