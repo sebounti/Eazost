@@ -13,25 +13,36 @@ export default function VerifyEmailPage() {
         const verifyEmail = async () => {
             try {
                 const token = searchParams.get('token');
+                console.log('Token reçu:', token); // Debug log
+
                 if (!token) {
                     setStatus('error');
                     setMessage('Token manquant');
                     return;
                 }
 
-                const response = await fetch(`/api/auth/validationEmail?token=${token}`);
+                // Décodez le token pour obtenir l'email
+                const response = await fetch('/api/auth/verify-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token }) // Envoyez le token au lieu de l'email
+                });
+
                 const data = await response.json();
+                console.log('Réponse API:', data); // Debug log
 
                 if (response.ok) {
                     setStatus('success');
                     setMessage('Email vérifié avec succès');
-                    // Rediriger vers la page de connexion après 3 secondes
                     setTimeout(() => router.push('/login'), 3000);
                 } else {
                     setStatus('error');
                     setMessage(data.error || 'Une erreur est survenue');
                 }
             } catch (error) {
+                console.error('Erreur de vérification:', error);
                 setStatus('error');
                 setMessage('Une erreur est survenue lors de la vérification');
             }
