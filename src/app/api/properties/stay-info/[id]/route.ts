@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/db";
 import { stayInfo } from "@/db/appSchema";
 import { eq } from "drizzle-orm";
-import { pool } from "@/db/db";
+
 
 //----- route stay-info -----//
 // route pour les informations de séjour //
