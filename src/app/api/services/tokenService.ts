@@ -1,10 +1,12 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { sessions } from '@/db/authSchema';
 import { lt } from 'drizzle-orm/expressions';
 import crypto from 'crypto';
 import { NextRequest } from 'next/server';
+
 
 
 //---- TOKEN CONFIGURATION ----//
@@ -26,14 +28,10 @@ export const TOKEN_CONFIG = {
   }
 };
 
-// Types
-interface TokenOptions {
-  expiresIn?: string | number;
-}
 
 interface JwtPayload {
-  userId: number;
-  role: string;
+  userId: number | string;
+  role?: string;
   type: 'access' | 'refresh' | 'account';
 }
 
@@ -50,20 +48,28 @@ interface VerifyTokenResult {
 export function generateAccessToken(
   userId: string | number,
   role: string = 'user',
-  options: TokenOptions = { expiresIn: TOKEN_CONFIG.DURATION.ACCESS }
-) {
+  options: SignOptions = { expiresIn: TOKEN_CONFIG.DURATION.ACCESS as StringValue }
+): string {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+
   return jwt.sign(
     { userId, role, type: 'access' },
-    process.env.JWT_SECRET!,
-    { expiresIn: options.expiresIn }
+    process.env.JWT_SECRET,
+    options
   );
 }
 
-export function generateRefreshToken(userId: string | number) {
+export function generateRefreshToken(userId: string | number): string {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+
   return jwt.sign(
     { userId, type: 'refresh' },
-    process.env.JWT_SECRET!,
-    { expiresIn: TOKEN_CONFIG.DURATION.REFRESH }
+    String(process.env.JWT_SECRET),
+    { expiresIn: TOKEN_CONFIG.DURATION.REFRESH as StringValue }
   );
 }
 
@@ -97,15 +103,21 @@ export function setAuthCookies(
 // Vérification de token
 export async function verifyToken(token: string, type: 'access' | 'refresh'): Promise<VerifyTokenResult> {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+
     if (decoded.type !== type) {
       return { success: false, error: 'Type de token invalide' };
     }
+
     return {
       success: true,
       data: {
         userId: decoded.userId.toString(),
-        role: decoded.role
+        role: decoded.role || 'user'
       }
     };
   } catch (error) {
