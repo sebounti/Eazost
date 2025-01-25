@@ -8,7 +8,6 @@ import { BarChart } from "@tremor/react"
 import Link from 'next/link'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useAuthStore } from '@/stores/authStore'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -104,11 +103,7 @@ export default function Dashboard() {
     fetchDashboardData()
   }, [])
 
-  if (isLoading) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <LoadingSpinner />
-    </div>
-  )
+  if (isLoading) return null; // Le spinner sera géré par le layout
 
   if (error) return <ErrorDisplay message={error} />
 
