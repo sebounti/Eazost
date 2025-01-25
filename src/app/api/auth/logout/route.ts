@@ -9,6 +9,7 @@ import { TOKEN_CONFIG } from '@/app/api/services/tokenService';
 //----- POST -----//
 // Route pour la déconnexion //
 export async function POST() {
+	console.log("🔴 Déconnexion en cours...");
   try {
     const response = NextResponse.json(
       { message: 'Déconnexion réussie' },
@@ -18,9 +19,9 @@ export async function POST() {
     // Utiliser les bons noms de cookies
     response.cookies.set(TOKEN_CONFIG.NAMES.ACCESS, '', { maxAge: 0 });
     response.cookies.set(TOKEN_CONFIG.NAMES.REFRESH, '', { maxAge: 0 });
+	response.cookies.set('next-auth.session-token', '', { maxAge: 0 });
 
-	// Rediriger vers la page de login
-	await signOut({ callbackUrl: '/auth/login' });
+	console.log("🔴 cookie supprimé, Déconnexion réussie");
 
     return response;
   } catch (error) {
