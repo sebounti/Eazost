@@ -1,6 +1,4 @@
-import { accommodation } from "@/db/appSchema";
-import { int } from "drizzle-orm/mysql-core";
-import { optional, z } from "zod";
+import { z } from "zod";
 
 // components props validation
 export const CardSchema = z.object({
