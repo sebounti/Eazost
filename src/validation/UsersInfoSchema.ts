@@ -1,9 +1,8 @@
-
 import { optional, z } from "zod";
 
 
 export const UsersInfoSchema = z.object({
-	users_id: z.number().nonnegative(),  // Assurez-vous que users_id est bien validé comme un nombre
+	users_id: z.string(),  // Changé de number() à string()
 	first_name: z.string().min(1, { message: "le prénom est requis" }),
 	last_name: z.string().min(1, { message: "le nom est requis" }),
 	date_of_birth: z.string().refine(
