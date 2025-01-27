@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Poppins, Nunito } from "next/font/google";
-import Header_owner from "@/components/Header_owner";
 import Footer from "@/components/Footer";
 import { AppSidebar } from "@/components/app-sidebar";
 import {

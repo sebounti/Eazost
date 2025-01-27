@@ -7,13 +7,12 @@ import { MdAdd } from "react-icons/md";
 import { useAccommodationStore } from "@/stores/accommodationStore";
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { Toaster, toast } from "sonner";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { type InfoCardFormData } from "@/components/card/forms/InfoCardForm";
 import LogementDialog from "@/components/card/dialogs/LogementDialog";
 import { useStayInfoStore } from "@/stores/useStayInfoStore";
-import { Accommodation, Product } from "@/types";
+import { Product } from "@/types";
 
 
 
@@ -306,7 +305,6 @@ const LogementsPage = memo(function LogementsPage() {
         </Breadcrumb>
       </div>
       <Toaster position="top-center" />
-      <ErrorBoundary>
         <div className="container p-4 mx-auto">
           <h1 className="text-5xl font-extrabold tracking-tight p-2">
             Gestion des Logements
@@ -320,11 +318,13 @@ const LogementsPage = memo(function LogementsPage() {
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <input
               type="text"
-              placeholder="Rechercher par nom ou ville..."
+              placeholder="Rechercher par nom ou ville ou par pays"
               className="px-4 py-2 border rounded-xl flex-1"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+
+			{/* Filtre par type de logement */}
             <select
               className="px-4 py-2 border rounded-xl"
               value={filterType}
@@ -386,7 +386,6 @@ const LogementsPage = memo(function LogementsPage() {
             ))}
           </div>
         </div>
-      </ErrorBoundary>
     </>
   );
 });

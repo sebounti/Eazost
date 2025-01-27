@@ -5,11 +5,10 @@ import { useAuthStore } from "@/stores/authStore";
 import { MdClose, } from "react-icons/md";
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { toast } from "sonner";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import InfoCard from "@/components/card/InfoCard";
 import { useStayInfoStore } from "@/stores/useStayInfoStore";
 import { useAccommodationStore } from "@/stores/accommodationStore";
-import { type Accommodation, type stayInfo } from '@/types';
+import { type Accommodation } from '@/types';
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useSession } from "next-auth/react";
@@ -78,9 +77,13 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 	  }
 	}, [error]);
 
-
+	// Filtrage des informations de séjour
 	const filteredstayinfo = useFilteredStayInfo({
-		stayInfo: stayInfo || [],
+		stayInfo: (stayInfo || []).map(info => ({
+			...info,
+			description: info.description || '',
+			category: info.category || ''
+		})),
 		accommodation: accommodation || [],
 		filterType,
 		searchTerm,
@@ -259,7 +262,6 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
       </Breadcrumb>
     </div>
 
-		  <ErrorBoundary>
 			<div className="container p-4 mx-auto">
 			  <h1 className="text-5xl font-extrabold tracking-tight p-2 ">
 				Gestion des cartes d'information
@@ -360,7 +362,6 @@ const CardInfoPage = memo(function CardInfoPage(): JSX.Element {
 				</div>
 			  )}
 			</div>
-		  </ErrorBoundary>
 		</>
 	);
 });

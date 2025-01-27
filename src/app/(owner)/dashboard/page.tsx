@@ -188,7 +188,7 @@ export default function Dashboard() {
 	<div className="grid gap-6 md:grid-cols-2 sm:grid-cols-1">
         <Card>
           <CardHeader className="flex flex-row lg:flex-row md:flex-col items-center justify-between pb-2 space-y-0 sm:flex-col">
-            <CardTitle className="text-lg font-medium md:text-lg sm:text-base sm:text-center">Commandes en Attente</CardTitle>
+            <CardTitle className="text-lg font-medium md:text-lg sm:text-base sm:text-center">Commandes</CardTitle>
             <Package className="w-8 h-8 text-amber-400 text-muted-foreground md:w-6 sm:w-6 md:h-6 sm:h-6" />
           </CardHeader>
           <CardContent className="md:text-center sm:text-center">
@@ -198,7 +198,7 @@ export default function Dashboard() {
             <p className="text-md text-muted-foreground md:text-sm md:mb-4 sm:text-sm sm:mb-2">
               À traiter sur l'ensemble des shops
             </p>
-            <Button asChild className="mt-4 shadow-lg text-gray-900 text-md bg-amber-400 rounded-xl hover:bg-amber-500 transition-colors md:w-full sm:w-full">
+            <Button asChild className="mt-4 shadow-lg text-gray-900 text-md bg-amber-400 rounded-xl hover:bg-amber-500 transition-colors md:w-full sm:text-xs sm:w-full">
               <Link href="/properties/shops">Gérer les shops</Link>
             </Button>
           </CardContent>
@@ -218,7 +218,7 @@ export default function Dashboard() {
             <p className="text-md text-muted-foreground md:text-sm md:mb-4 sm:text-sm sm:mb-2">
               {globalStats.totalUnreadMessages === 0 ? "Vous êtes à jour" : "Nouveaux messages"}
             </p>
-            <Button asChild className="mt-4 shadow-lg text-gray-900 text-md bg-amber-400 rounded-xl hover:bg-amber-500 transition-colors md:w-full sm:w-full">
+            <Button asChild className="mt-4 shadow-lg text-gray-900 text-md bg-amber-400 rounded-xl hover:bg-amber-500 transition-colors md:w-full md:text-xs sm:w-full sm:text-xs">
               <Link href="/properties/messages">Voir les messages</Link>
             </Button>
           </CardContent>
