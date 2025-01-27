@@ -5,7 +5,7 @@ import '@/app/globals.css';
 import { Toaster } from 'sonner';
 import { Poppins, Nunito } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
-
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 const poppins = Poppins({
 	subsets: ['latin'],
 	weight: ['400', '700'],
@@ -25,9 +25,10 @@ const nunito = Nunito({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" className={`${poppins.variable} ${nunito.variable}`} suppressHydrationWarning>
+			<ErrorBoundary>
 			<head>
 				<link
-					rel="icon"
+					rel="shortcut icon"
 					href="/favicon.ico"
 					sizes="any"
 				/>
@@ -36,8 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				<SessionProvider>
 					{children}
 					<Toaster richColors position="bottom-right" />
-				</SessionProvider>
-			</body>
+					</SessionProvider>
+				</body>
+			</ErrorBoundary>
 		</html>
 	);
 }
