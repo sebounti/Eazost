@@ -19,7 +19,7 @@ import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
-import { users, accounts, sessions, usersVerification } from "@/db/authSchema";
+import { users, accounts, sessions, verificationTokens } from "@/db/authSchema";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2024-12-18.acacia"
@@ -30,7 +30,7 @@ export const { handlers: { GET, POST }, auth } = NextAuth({
         usersTable: users,
         accountsTable: accounts,
         sessionsTable: sessions,
-        verificationTokensTable: usersVerification
+        verificationTokensTable: verificationTokens
     }),
     secret: process.env.NEXTAUTH_SECRET,
     debug: true,
