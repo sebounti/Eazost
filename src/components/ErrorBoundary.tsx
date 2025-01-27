@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return this.props.fallback || (
         <div className="error-container">
-          <h2>Une erreur est survenue</h2>
+          <h2>Oops! Une erreur est survenue</h2>
           <p>{this.state.error?.message}</p>
         </div>
       );

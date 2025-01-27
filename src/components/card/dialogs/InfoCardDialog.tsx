@@ -17,11 +17,11 @@ import * as Dialog from '@radix-ui/react-dialog'
 
 // Types
 type InfoCardDialogProps = {
-	logementId?: number;
+	logementId: number;
 	logementNom?: string;
 	cardInfo?: typeof stayInfo.$inferSelect;
-	onAddInfoCard?: (logementId: number, data: InfoCardFormData) => Promise<void>;
-	onEditInfoCard?: (logementId: number, cardId: number, data: InfoCardFormData) => void | Promise<void>;
+	onAddInfoCard: (logementId: number, data: InfoCardFormData) => Promise<void>;
+	onEditInfoCard: (logementId: number, cardId: number, data: InfoCardFormData) => Promise<void>;
 	onDeleteInfoCard?: (logementId: number, cardId: number) => Promise<void>;
 	children: React.ReactNode;
 };
@@ -94,7 +94,6 @@ export default function InfoCardDialog({
 
 					<DialogHeader className="p-4 bg-amber-500 border-b sticky top-0 z-10">
 						<DialogTitle>{cardInfo?.title || "Nouvelle carte"}</DialogTitle>
-						<DialogDescription>{cardInfo?.description || "Ajoutez une description"}</DialogDescription>
 					</DialogHeader>
 
 					<div className="p-4 overflow-y-auto">

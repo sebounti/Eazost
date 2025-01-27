@@ -10,7 +10,6 @@ import { z } from 'zod';
 import CloudinaryFileUploader from "@/components/upload/CloudinaryFileUploder";
 import Image from "next/image";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { stayInfo } from '@/db/appSchema';
 import { useSession } from "next-auth/react";
@@ -57,13 +56,13 @@ export interface InfoCardData {
 }
 
 // Types pour le formulaire
-export interface InfoCardFormData {
+export type InfoCardFormData = {
 	title: string;
 	category: typeof CARDINFORMATION_TYPES[number];
 	description: string;
 	accommodation_id: number;
-	photo_url: string | null | undefined;
-}
+	photo_url: string | null;
+};
 
 // Props du composant
 export interface InfoCardFormProps {

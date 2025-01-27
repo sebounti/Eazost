@@ -1,14 +1,22 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+
 
 export default function HomeNavbar({ isBlurred }: { isBlurred: boolean }) {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
     };
 
+    const handleSignUp = () => {
+        setIsOpen(false);
+        router.push('/registration');
+    };
 
     return (
 	<nav className={`fixed top-0 w-full z-50 p-4 '`}>
@@ -46,11 +54,12 @@ export default function HomeNavbar({ isBlurred }: { isBlurred: boolean }) {
     		</button>
 				<Link href="#features" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">Fonctionnalité</Link>
                 <Link href="#pricing" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">Tarif</Link>
-				<Link href="/registration">
-				<button className="font-sans tracking-wide rounded-xl bg-amber-700  text-white mr-7 md:p-3 hover:bg-amber-500 animate-pulse animate-infinite animate-duration-[3000ms]">
-                Sign up
-            	</button>
-				</Link>
+				<button
+                    onClick={handleSignUp}
+                    className="font-sans tracking-wide rounded-xl bg-amber-700 text-white mr-7 md:p-3 hover:bg-amber-500 animate-pulse animate-infinite animate-duration-[3000ms]"
+                >
+                    Sign up
+                </button>
 				<Link href="#newsletter" className="text-xl tracking-wide shadow-sm text-amber-700 mr-7">
   				Contact
 				</Link>

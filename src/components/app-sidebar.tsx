@@ -13,7 +13,6 @@ import {
 	KeyRound
 } from "lucide-react"
 import { useEffect } from "react"
-import { signOut } from "next-auth/react"
 import { useSession } from "next-auth/react"
 
 // Stores

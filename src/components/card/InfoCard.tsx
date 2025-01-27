@@ -8,7 +8,7 @@ import Image from "next/image";
 import { FocusScope } from '@radix-ui/react-focus-scope';
 import { MdEdit, MdDelete } from "react-icons/md";
 // UI Components
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog,  DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -41,25 +41,13 @@ interface InfoCardProps {
 
 
 // Composant LogementCard
-const InfoCard = ({ cardInfo, onUpdateImage, onEditInfoCard, onAddInfoCard, onDeleteInfoCard }: InfoCardProps) => {
+const InfoCard = ({ cardInfo, onEditInfoCard, onAddInfoCard, onDeleteInfoCard }: InfoCardProps) => {
 	console.log("InfoCard - cardInfo:", cardInfo);
 	const { updateStayInfo, deleteStayInfo } = useStayInfoStore();
 	const [loading, setLoading] = useState(false);
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-	const handleSubmit = async (data: InfoCardData) => {
-		try {
-			const updatedData = {
-				title: data.title,
-				description: data.description,
-				category: data.category ?? null,
-				photo_url: data.photo_url ?? null
-			};
-			await updateStayInfo(cardInfo.stay_info_id, updatedData);
-		} catch (error) {
-			console.error("Erreur lors de la mise à jour:", error);
-		}
-	};
+
 
   // LogementCard - Données initiale
   useEffect(() => {
@@ -133,11 +121,11 @@ const InfoCard = ({ cardInfo, onUpdateImage, onEditInfoCard, onAddInfoCard, onDe
           <h3 className="text-xl text-gray-700">{cardInfo.category}</h3>
           <div className="relative h-[90px] overflow-hidden">
             <p className={`text-sm italic text-gray-600 ${
-              cardInfo.description.length > 100 ? 'line-clamp-3' : ''
+              (cardInfo.description?.length ?? 0) > 100 ? 'line-clamp-3' : ''
             }`}>
-              {cardInfo.description}
+              {cardInfo.description ?? ''}
             </p>
-            {cardInfo.description.length > 150 && (
+            {(cardInfo.description?.length ?? 0) > 150 && (
               <div>
                 <button
                   aria-label="Voir plus"
