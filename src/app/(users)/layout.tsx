@@ -3,6 +3,7 @@ import { Poppins, Nunito } from "next/font/google";
 import Footer from "@/components/Footer";
 import "@/app/globals.css";
 import { cookies } from "next/headers";
+import { useAuth } from '@/hook/auth/useAuth';
 
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '700'] });
