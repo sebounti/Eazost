@@ -57,16 +57,23 @@ const PUBLIC_ROUTES = [
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // 1. Vérifier si c'est une route publique
+  // 1. Ignorer les routes publiques
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // 2. Vérifier le token
-  const token = await getToken({ req: request });
+  // 2. Vérifier l'authentification avec NextAuth
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET
+  });
+
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
+
+  console.log("🔍 Vérification du token NextAuth:", token);
+
 
   // 3. Vérifier les autorisations
   const userRole = token.account_type as keyof typeof PROTECTED_ROUTES;
@@ -74,7 +81,6 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  // 4. Rediriger si l'utilisateur n'est pas autorisé
   if (!isAuthorized) {
     const defaultPath = userRole === 'owner' ? '/dashboard' : '/homePage';
     return NextResponse.redirect(new URL(defaultPath, request.url));
