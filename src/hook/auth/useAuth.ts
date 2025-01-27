@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 export function useAuth() {
     const { data: session } = useSession();
 
+	// Vérification des tokens d'authentification
     useEffect(() => {
         const checkTokens = async () => {
             const cookies = document.cookie.split(';').reduce((acc, cookie) => {
@@ -15,6 +16,8 @@ export function useAuth() {
                 acc[key] = value;
                 return acc;
             }, {} as Record<string, string>);
+
+			// Vérification si les cookies sont disponibles
 
             console.log('🍪 Cookies disponibles:', Object.keys(cookies));
         };

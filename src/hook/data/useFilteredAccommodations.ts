@@ -9,8 +9,19 @@ export function useFilteredAccommodations(
   filterType: string
 ) {
   return accommodations?.filter((logement) => {
-    const matchesSearch = logement.name.toLowerCase().includes(searchTerm.toLowerCase());
+	// Conversion du terme de recherche en minuscule
+	const lowerSearchTerm = searchTerm.toLowerCase();
+
+	// Vérification si le nom du logement contient le terme de recherche
+    const matchesSearch =
+	logement.name.toLowerCase().includes(searchTerm.toLowerCase());
+	logement.city.toLowerCase().includes(searchTerm.toLowerCase());
+	logement.country.toLowerCase().includes(searchTerm.toLowerCase());
+
+	// Vérification si le type du logement correspond au type sélectionné
     const matchesType = filterType === 'all' || logement.type === filterType;
-    return matchesSearch && matchesType;
+
+	// Retourne true si les deux conditions sont remplies
+	return matchesSearch && matchesType;
   });
 }

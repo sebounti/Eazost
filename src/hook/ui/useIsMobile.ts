@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 
+// Définition du point de rupture pour les appareils mobiles
+
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < MOBILE_BREAKPOINT);
 
   useEffect(() => {
-    const checkIsMobile = () => {
+    const handleResize = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
 
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return isMobile;
