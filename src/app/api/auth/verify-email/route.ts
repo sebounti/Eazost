@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db } from '@/db/db';
-import { usersVerification } from '@/db/authSchema';
+import { verificationTokens } from '@/db/authSchema';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: Request) {
@@ -19,15 +19,15 @@ export async function POST(request: Request) {
             );
 
             await db
-                .insert(usersVerification)
+                .insert(verificationTokens)
                 .values({
-                    email: body.email,
-                    verification_token: verificationToken,
-                    verified_at: null
+                    identifier: body.email,
+					token: verificationToken,
+					expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
                 })
                 .onDuplicateKeyUpdate({ set: {
-                    verification_token: verificationToken,
-                    verified_at: null
+                    token: verificationToken,
+                    expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
                 }});
 
             return NextResponse.json({
@@ -44,11 +44,11 @@ export async function POST(request: Request) {
             }
 
             await db
-                .update(usersVerification)
+                .update(verificationTokens)
                 .set({
-                    verified_at: new Date()
+                    expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
                 })
-                .where(eq(usersVerification.email, decoded.email));
+                .where(eq(verificationTokens.identifier, decoded.email));
 
             return NextResponse.json({
                 success: true,

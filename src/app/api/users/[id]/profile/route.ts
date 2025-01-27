@@ -7,6 +7,10 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { UsersInfoSchema } from "@/validation/UsersInfoSchema";
 
+
+
+//----- GET -----//
+// Route pour récupérer un profil //
 export async function GET(
     request: Request,
     { params }: { params: { id: string } }
@@ -36,10 +40,19 @@ export async function GET(
 
         console.log('📦 Profil trouvé:', userProfile);
 
+        // Vérifier si le profil existe
         if (!userProfile) {
             return NextResponse.json(
                 { error: "Profil non trouvé" },
                 { status: 404 }
+            );
+        }
+
+        // Vérifier si le profil est incomplet
+        if (!userProfile.first_name || !userProfile.last_name) {
+            return NextResponse.json(
+                { error: "Profil incomplet" },
+                { status: 400 }
             );
         }
 

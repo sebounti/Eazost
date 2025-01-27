@@ -1,5 +1,4 @@
 import NextAuth, { DefaultSession, NextAuthOptions } from "next-auth";
-import { NextResponse } from "next/server";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { eq } from "drizzle-orm";
@@ -7,11 +6,12 @@ import { db } from "@/db/db";
 import { users } from "@/db/authSchema";
 import bcrypt from "bcrypt";
 import { z } from 'zod';
-import { generateRefreshToken, generateAccessToken, setAuthCookies, saveSession, TOKEN_CONFIG } from "@/app/api/services/tokenService";
-import crypto from "crypto";
+import { CredentialsSchema } from "@/validation/loginSchema";
+import { signOut } from 'next-auth/react';
 
 //----- AUTH CONFIGURATION -----//
 // Gere l'authentification et la gestion des sessions //
+
 
 
 
@@ -53,16 +53,6 @@ declare module "next-auth/jwt" {
     }
 }
 
-// Validation des credentials avec zod
-const credentialsSchema = z.object({
-    email: z.string().email("Email invalide"),
-    password: z.string()
-        .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-        .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
-        .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
-        .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial")
-});
-
 // Options d'authentification
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -77,7 +67,7 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
                 try {
                     // Validation
-                    const validatedCredentials = credentialsSchema.parse(credentials);
+                    const validatedCredentials = CredentialsSchema.parse(credentials);
 
                     // Vérification utilisateur et mot de passe
                     const user = await verifyCredentials(validatedCredentials);
@@ -174,69 +164,11 @@ export const authOptions: NextAuthOptions = {
 
 
 		// callback de verification jwt
-		async jwt({ token, user, trigger }) {
-			console.log('🎫 JWT Callback - Début', {
-				trigger,
-				hasUser: !!user,
-				tokenBefore: {
-					hasId: !!token.id,
-					hasAccessToken: !!token.accessToken,
-				}
-			});
-
-			// Étape 1 : Récupération dynamique de account_type si nécessaire
-			if (!token.account_type && token.id) {
-				console.log('🔄 Récupération de account_type pour:', token.id);
-
-				// Récupérer le type de compte de la base de données avec Drizzle
-				const accountData = await db
-					.select({
-						account_type: users.account_type,
-					})
-					.from(users)
-					.where(eq(users.id, token.id))
-					.limit(1)
-					.then((res) => res[0]);
-
-				token.account_type = accountData?.account_type || 'user'; // Défaut "user" si non trouvé
-			}
-
-			// Étape 2 : Générer de nouveaux tokens si nécessaire
-			if (!token.accessToken && token.id) {
-				console.log('🔄 Régénération des tokens pour:', token.id);
-
-				const accessToken = generateAccessToken(token.id, token.account_type);
-				const refreshToken = generateRefreshToken(token.id);
-
-				token.accessToken = accessToken;
-				token.refreshToken = refreshToken;
-
-				await saveSession(token.id, refreshToken);
-				console.log('💾 Nouveaux tokens sauvegardés');
-			}
-
-			// Étape 3 : Si c'est une connexion initiale (trigger signIn)
-			if (trigger === "signIn" && user) {
-				console.log('👤 Nouvel utilisateur:', user.id);
-
-				const accessToken = generateAccessToken(user.id, user.account_type);
-				const refreshToken = generateRefreshToken(user.id);
-
+		async jwt({ token, user }) {
+			if (user) {
 				token.id = user.id;
 				token.account_type = user.account_type;
-				token.accessToken = accessToken;
-				token.refreshToken = refreshToken;
-
-				await saveSession(user.id, refreshToken);
 			}
-
-			console.log('🎫 JWT Callback - Fin', {
-				hasTokens: {
-					access: !!token.accessToken,
-					refresh: !!token.refreshToken,
-				},
-			});
-
 			return token;
 		},
 
@@ -300,3 +232,14 @@ async function verifyCredentials(credentials: { email: string; password: string 
     account_type: user.account_type ?? 'user'
   };
 }
+
+const handleLogout = async () => {
+  try {
+    // D'abord appeler notre API pour nettoyer les cookies
+    await fetch('/api/auth/logout', { method: 'POST' });
+    // Ensuite utiliser signOut de NextAuth
+    await signOut({ callbackUrl: '/login' });
+  } catch (error) {
+    console.error('Erreur lors de la déconnexion:', error);
+  }
+};

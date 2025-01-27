@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { usersVerification } from '@/db/authSchema';
+import { verificationTokens } from '@/db/authSchema';
 import { eq } from 'drizzle-orm';
 
 //----- VALIDATION EMAIL -----//
@@ -16,12 +16,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ verified: false });
     }
 
-    const verification = await db.query.usersVerification.findFirst({
-      where: eq(usersVerification.email, email)
+    const verification = await db.query.verificationTokens.findFirst({
+      where: eq(verificationTokens.identifier, email)
     });
 
     return NextResponse.json({
-      verified: !!verification?.verified_at
+      verified: !!verification?.expires
     });
   } catch (error) {
     console.error('Erreur validation email:', error);

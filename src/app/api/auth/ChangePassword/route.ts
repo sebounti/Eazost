@@ -1,90 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import rateLimiter from "@/utils/rateLimiter";
-import { db } from "@/db/db";
-import { users } from "@/db/authSchema";
-import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
-import { ChangePasswordSchema } from "@/validation/ChangePasswordSchema";
-import { getUserFromToken } from "@/app/api/services/tokenService";
+import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/db/db';
+import { users } from '@/db/authSchema';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcrypt';
 
 //----- CHANGE PASSWORD -----//
 // Permet de changer le mot de passe de l'utilisateur //
 
 
 // Permet de changer le mot de passe de l'utilisateur //
-export async function PATCH(
-  request: NextRequest,
-): Promise<NextResponse> {
-  const limitResult = rateLimiter(20)(request);
-  if (limitResult) {
-    return limitResult;
-  }
-
+export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const validatedData = ChangePasswordSchema.parse(body);
-
-    const { userId } = await getUserFromToken(request);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Non autorisé" },
-        { status: 403 }
-      );
+    const token = await getToken({ req: request });
+    if (!token?.sub) {
+      return NextResponse.json({ success: false, message: 'Non autorisé' }, { status: 401 });
     }
 
-    const user = await db.select().from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    const { currentPassword, newPassword } = await request.json();
 
-    if (!user || user.length === 0) {
-      return NextResponse.json(
-        { error: "Utilisateur non trouvé" },
-        { status: 404 }
-      );
+    // Vérifier l'utilisateur
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, token.sub)
+    });
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    const validPassword = await bcrypt.compare(
-      validatedData.oldPassword,
-      user[0].password
-    );
-
-    if (!validPassword) {
-      return NextResponse.json(
-        { error: "Ancien mot de passe incorrect" },
-        { status: 401 }
-      );
+    // Vérifier l'ancien mot de passe
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      return NextResponse.json({ success: false, message: 'Mot de passe actuel incorrect' }, { status: 400 });
     }
 
-    if (validatedData.oldPassword === validatedData.newPassword) {
-      return NextResponse.json(
-        { error: "Le nouveau mot de passe doit être différent de l'ancien" },
-        { status: 400 }
-      );
-    }
-
-    const hashedPassword = await bcrypt.hash(validatedData.newPassword, 10);
+    // Mettre à jour le mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     await db.update(users)
       .set({ password: hashedPassword })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, token.sub));
 
-    return NextResponse.json(
-      { message: "Mot de passe mis à jour avec succès" },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, message: 'Mot de passe mis à jour' });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors.map(e => e.message).join(", ") },
-        { status: 400 }
-      );
-    }
-
-    console.error("Erreur lors du changement de mot de passe:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la mise à jour du mot de passe" },
-      { status: 500 }
-    );
+    console.error('❌ Erreur changement mot de passe:', error);
+    return NextResponse.json({ success: false, message: 'Erreur serveur' }, { status: 500 });
   }
 }

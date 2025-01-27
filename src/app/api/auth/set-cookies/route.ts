@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
+//----- DECLARATION DE TYPE -----//
+// Type pour le token
+type Token = {
+    accessToken: string;
+    refreshToken: string;
+}
+
+//----- FONCTION -----//
+// Fonction pour définir les cookies
 export async function GET(request: NextRequest) {
     try {
         const token = await getToken({

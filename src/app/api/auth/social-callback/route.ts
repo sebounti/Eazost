@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../[...nextauth]/route";
-import {db} from "@/db/db";
+import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/db/authSchema";
-import { generateAccessToken, generateRefreshToken } from "@/app/api/services/tokenService";
 
 //----- SOCIAL CALLBACK -----//
 // Permet de gérer la connexion sociale //
 
+const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 //----- GET -----//
 // Route pour gérer la connexion sociale //
@@ -22,72 +22,38 @@ export async function GET(request: Request) {
     }
 
     // Vérifier si l'utilisateur existe déjà
-    await db.insert(users).values({
-      id: crypto.randomUUID(),
-      uuid: crypto.randomUUID(),
-      email: session.user.email,
-      account_type: "user",
-      user_name: session.user.name || "User",
-      password: "",
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-
     const user = await db.query.users.findFirst({
       where: eq(users.email, session.user.email),
     });
 
     if (!user) {
-      return NextResponse.redirect(new URL("/login?error=UserNotFound", baseUrl));
+      // Créer l'utilisateur s'il n'existe pas
+      await db.insert(users).values({
+        id: crypto.randomUUID(),
+        uuid: crypto.randomUUID(),
+        email: session.user.email,
+        account_type: "user",
+        user_name: session.user.name || "User",
+        password: "",
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
     }
 
-    // Générer les tokens de votre système
-    const accessToken = generateAccessToken(user.id, user.account_type);
-    const refreshToken = generateRefreshToken(user.id);
 
-    // Créer la réponse avec redirection
+    // Rediriger vers le dashboard avec les informations utilisateur
     const userData = {
-      user_id: user.id,
-      email: user.email,
-      account_type: user.account_type,
-      name: user.name
+      email: session.user.email,
+      name: session.user.name,
+      account_type: user?.account_type || "user"
     };
 
-    const response = NextResponse.redirect(
+    return NextResponse.redirect(
       new URL(`/dashboard?userData=${encodeURIComponent(JSON.stringify(userData))}`, baseUrl)
     );
 
-    // Définir vos cookies d'authentification
-    response.cookies.set("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
-    });
-
-	// Définir les cookies de refresh token
-    response.cookies.set("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 jours
-    });
-
-    // Cookie pour le frontend
-    response.cookies.set("user", JSON.stringify(userData), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
-    });
-
-    return response;
   } catch (error) {
     console.error("Erreur dans social-callback:", error);
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     return NextResponse.redirect(new URL("/login?error=AuthError", baseUrl));
   }
 }
